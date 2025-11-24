@@ -4,7 +4,7 @@ import { StorageService } from '../services/storage';
 import { PricingService } from '../services/pricing';
 import { COURIER_OPTIONS } from '../constants';
 import { WhatsAppService } from '../services/whatsapp';
-import { Search, Plus, Filter, QrCode, X, Truck, MessageCircle, Trash2, Camera, CheckCircle, Package as PackageIcon } from 'lucide-react';
+import { Search, Plus, QrCode, X, Truck, MessageCircle, Trash2, Camera, CheckCircle, Package as PackageIcon } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 interface PackagesProps {

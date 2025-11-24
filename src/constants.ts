@@ -1,4 +1,3 @@
-
 import { User, Location, AppSettings, Customer } from './types';
 
 export const INITIAL_SETTINGS: AppSettings = {
