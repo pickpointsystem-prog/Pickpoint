@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Customer, User } from '../types';
 import { StorageService } from '../services/storage';
 import { WhatsAppService } from '../services/whatsapp';
-import { Plus, Star, CreditCard, X, Calendar, ShieldCheck, Ban, CheckCircle2, Trash2 } from 'lucide-react';
+import { Plus, Star, CreditCard, X, Calendar, ShieldCheck, Ban, Trash2 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 const Customers: React.FC<{ user: User }> = ({ user }) => {

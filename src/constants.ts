@@ -1,5 +1,5 @@
 
-import { User, Location, AppSettings, Package, Customer } from './types';
+import { User, Location, AppSettings, Customer } from './types';
 
 export const INITIAL_SETTINGS: AppSettings = {
   waApiKey: "yBMXcDk5iWz9MdEmyu8eBH2uhcytui",

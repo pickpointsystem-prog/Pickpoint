@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { StorageService } from '../services/storage';
 import { PricingService } from '../services/pricing';
-import { Package, Location, Customer } from '../types';
-import { Search, Package as PackageIcon, MapPin, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Package, Location } from '../types';
+import { Search, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 
 const Tracking: React.FC = () => {
   const [searchParams] = useSearchParams();
