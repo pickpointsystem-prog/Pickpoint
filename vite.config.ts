@@ -5,6 +5,14 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: true
+    host: true,
+    proxy: {
+      '/api/wa': {
+        target: 'https://seen.getsender.id/send-message',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/api\/wa/, ''),
+        secure: false
+      }
+    }
   }
 })

@@ -1,5 +1,52 @@
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+// Helper: Export CSV
+function exportPackagesToCSV(packages: Package[]) {
+  const headers = [
+    'AWB',
+    'Recipient Name',
+    'Unit',
+    'Phone',
+    'Courier',
+    'Size',
+    'Location',
+    'Status',
+    'Arrived',
+    'Picked',
+    'Destroyed',
+    'Pickup Code',
+    'Fee Paid',
+    'Notif Status'
+  ];
+  const rows = packages.map(pkg => [
+    pkg.trackingNumber,
+    pkg.recipientName,
+    pkg.unitNumber,
+    pkg.recipientPhone,
+    pkg.courier,
+    pkg.size,
+    pkg.locationId,
+    pkg.status,
+    pkg.dates.arrived,
+    pkg.dates.picked || '',
+    pkg.dates.destroyed || '',
+    pkg.pickupCode,
+    pkg.feePaid,
+    pkg.notificationStatus
+  ]);
+  const csvContent = [headers, ...rows]
+    .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+    .join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `packages_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 import { User, Package, DashboardStats, PackageSize, Customer, Location } from '../types';
 import { StorageService } from '../services/storage';
 import { PricingService } from '../services/pricing';
@@ -338,10 +385,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
              />
            </div>
 
-           {/* Add Button */}
-           <button onClick={() => setIsAddModalOpen(true)} className="flex-shrink-0 flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-slate-200 transition-all active:scale-95 w-full lg:w-auto">
-             <Plus className="w-4 h-4" /> Receive Package
-           </button>
+           <div className="flex gap-2 w-full lg:w-auto">
+             {/* Export CSV Button */}
+             <button
+               type="button"
+               onClick={() => exportPackagesToCSV(filteredPackages)}
+               className="flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 px-4 py-2 rounded-lg text-xs font-bold border border-green-200 shadow-sm transition-all"
+             >
+               <ArrowDownRight className="w-4 h-4" /> Export CSV
+             </button>
+             {/* Add Button */}
+             <button onClick={() => setIsAddModalOpen(true)} className="flex-shrink-0 flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-slate-200 transition-all active:scale-95 w-full lg:w-auto">
+               <Plus className="w-4 h-4" /> Receive Package
+             </button>
+           </div>
         </div>
 
         {/* Data Table */}
