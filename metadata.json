@@ -1,0 +1,7 @@
+{
+  "name": "Pickpoint Dashboard",
+  "description": "A comprehensive package management system for apartments with membership and pricing engines.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
