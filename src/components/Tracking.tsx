@@ -21,12 +21,21 @@ const Tracking: React.FC = () => {
   }, [searchParams]);
 
   const handleSearch = (trackingId: string) => {
-    if(!trackingId) return;
+    const trimmed = trackingId.trim();
+    if(!trimmed) {
+      setError('Masukkan nomor resi/AWB terlebih dahulu');
+      return;
+    }
     setError('');
     setResult(null);
 
     const packages = StorageService.getPackages();
-    const found = packages.find(p => p.trackingNumber.toLowerCase() === trackingId.toLowerCase());
+    // Cari dengan case-insensitive dan trim space
+    const found = packages.find(p => 
+      p.trackingNumber.trim().toLowerCase() === trimmed.toLowerCase() ||
+      p.pickupCode.trim().toLowerCase() === trimmed.toLowerCase() ||
+      p.id.toLowerCase() === trimmed.toLowerCase()
+    );
 
     if (found) {
       const locations = StorageService.getLocations();
@@ -39,10 +48,10 @@ const Tracking: React.FC = () => {
         const fee = PricingService.calculateFee(found, loc, cust);
         setResult({ pkg: found, loc, fee });
       } else {
-        setError("Location data not found.");
+        setError("Data lokasi tidak ditemukan. Hubungi administrator.");
       }
     } else {
-      setError("Package not found. Please check your Tracking Number / AWB.");
+      setError("Paket tidak ditemukan. Periksa kembali nomor resi/AWB Anda.");
     }
   };
 

@@ -52,6 +52,7 @@ import { StorageService } from '../services/storage';
 import { PricingService } from '../services/pricing';
 import { WhatsAppService } from '../services/whatsapp';
 import { COURIER_OPTIONS } from '../constants';
+import BarcodeScanner from './BarcodeScanner';
 import { 
   Package as PackageIcon, DollarSign, Users, Activity, 
   ArrowUpRight, ArrowDownRight, Search, Plus, 
@@ -95,6 +96,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [isAutoFilled, setIsAutoFilled] = useState(false); // State to lock fields
+  const [isScannerOpen, setIsScannerOpen] = useState(false); // Scanner modal
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -585,7 +587,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Tracking / AWB</label>
                    <div className="flex gap-2">
                      <input required autoFocus className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.tracking} onChange={e => setFormData({...formData, tracking: e.target.value})} placeholder="Scan or type..." />
-                     <button type="button" className="p-2.5 bg-slate-100 rounded-lg hover:bg-slate-200 text-slate-600"><QrCode className="w-5 h-5" /></button>
+                     <button type="button" onClick={() => setIsScannerOpen(true)} className="p-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors" title="Scan Barcode"><QrCode className="w-5 h-5" /></button>
                    </div>
                  </div>
                  
@@ -830,6 +832,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
            </div>
         </div>
       )}
+
+      {/* Barcode Scanner Modal */}
+      <BarcodeScanner 
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScan={(code) => setFormData({...formData, tracking: code})}
+      />
     </div>
   );
 };
