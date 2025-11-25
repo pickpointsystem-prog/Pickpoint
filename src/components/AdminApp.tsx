@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
+import { useApp } from '../context/AppContext';
 import Login from './Login';
 import Dashboard from './Dashboard';
 import Locations from './Locations';
@@ -17,6 +17,7 @@ type View = 'DASHBOARD' | 'LOCATIONS' | 'USERS' | 'CUSTOMERS' | 'SETTINGS' | 'RE
 const AdminApp: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [currentView, setCurrentView] = useState<View>('DASHBOARD');
+  const { t } = useApp();
 
   useEffect(() => {
     const sessionUser = sessionStorage.getItem('pp_session');
@@ -42,7 +43,7 @@ const AdminApp: React.FC = () => {
 
   const isAdmin = user.role === 'ADMIN';
   
-  const NavItem = ({ view, icon: Icon, label }: { view: View; icon: any; label: string }) => (
+  const NavItem = ({ view, icon: Icon, label, translationKey }: { view: View; icon: any; label: string, translationKey: string }) => (
     <button
       onClick={() => setCurrentView(view)}
       className={twMerge(
@@ -53,10 +54,19 @@ const AdminApp: React.FC = () => {
       )}
     >
       <Icon className="w-5 h-5 mr-3" />
-      {label}
+      {t(translationKey) || label}
     </button>
   );
 
+  const viewTitles: { [key in View]: string } = {
+    DASHBOARD: 'dashboard.title',
+    REPORTS: 'reports.title',
+    CUSTOMERS: 'customer.title',
+    LOCATIONS: 'location.title',
+    USERS: 'users.title',
+    SETTINGS: 'settings.title',
+  };
+  
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans">
       <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-20 shadow-sm">
@@ -69,16 +79,16 @@ const AdminApp: React.FC = () => {
         </div>
 
         <nav className="flex-1 p-4 overflow-y-auto">
-          <NavItem view="DASHBOARD" icon={LayoutDashboard} label="Overview" />
-          <NavItem view="REPORTS" icon={BarChart3} label="Analytics" />
-          <NavItem view="CUSTOMERS" icon={UserCircle} label="Customers" />
+          <NavItem view="DASHBOARD" icon={LayoutDashboard} label="Overview" translationKey="dashboard.title" />
+          <NavItem view="REPORTS" icon={BarChart3} label="Analytics" translationKey="reports.title" />
+          <NavItem view="CUSTOMERS" icon={UserCircle} label="Customers" translationKey="customer.title" />
           
           {isAdmin && (
             <>
               <div className="mt-6 mb-2 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Admin</div>
-              <NavItem view="LOCATIONS" icon={MapPin} label="Locations" />
-              <NavItem view="USERS" icon={UsersIcon} label="Users" />
-              <NavItem view="SETTINGS" icon={SettingsIcon} label="Settings" />
+              <NavItem view="LOCATIONS" icon={MapPin} label="Locations" translationKey="location.title" />
+              <NavItem view="USERS" icon={UsersIcon} label="Users" translationKey="users.title" />
+              <NavItem view="SETTINGS" icon={SettingsIcon} label="Settings" translationKey="settings.title" />
             </>
           )}
         </nav>
@@ -95,7 +105,7 @@ const AdminApp: React.FC = () => {
           </div>
           <button onClick={handleLogout} className="flex items-center w-full px-2 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors">
             <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
+            {t('common.logout')}
           </button>
         </div>
       </aside>
@@ -103,7 +113,7 @@ const AdminApp: React.FC = () => {
       <main className="flex-1 overflow-auto relative">
         <header className="sticky top-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-8 py-4 flex justify-between items-center">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white capitalize">
-            {currentView === 'REPORTS' ? 'Analytics & Reports' : currentView.toLowerCase().replace('_', ' ')}
+            {t(viewTitles[currentView])}
           </h2>
           <div className="flex items-center gap-6">
             <div className="text-sm text-slate-500 dark:text-slate-400">
@@ -125,5 +135,3 @@ const AdminApp: React.FC = () => {
     </div>
   );
 };
-
-export default AdminApp;
