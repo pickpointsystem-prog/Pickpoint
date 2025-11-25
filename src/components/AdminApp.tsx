@@ -8,8 +8,10 @@ import Users from './Users';
 import Customers from './Customers';
 import Settings from './Settings';
 import Reports from './Reports';
+import LanguageThemeToggle from './LanguageThemeToggle';
 import { LayoutDashboard, MapPin, Users as UsersIcon, Settings as SettingsIcon, LogOut, UserCircle, BarChart3 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import { useApp } from '../context/AppContext';
 
 type View = 'DASHBOARD' | 'LOCATIONS' | 'USERS' | 'CUSTOMERS' | 'SETTINGS' | 'REPORTS';
 
@@ -57,8 +59,8 @@ const AdminApp: React.FC = () => {
   );
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col z-20 shadow-sm">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans">
+      <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-20 shadow-sm">
         <div className="p-6 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">P</div>
@@ -82,17 +84,17 @@ const AdminApp: React.FC = () => {
           )}
         </nav>
 
-        <div className="p-4 border-t border-slate-100 bg-slate-50">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800">
           <div className="flex items-center gap-3 mb-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
+            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm">
               {user.name.charAt(0)}
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-medium text-slate-900 truncate">{user.name}</p>
-              <p className="text-xs text-slate-500 truncate capitalize">{user.role}</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{user.name}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate capitalize">{user.role}</p>
             </div>
           </div>
-          <button onClick={handleLogout} className="flex items-center w-full px-2 py-2 text-xs font-medium text-red-600 hover:bg-red-50 rounded transition-colors">
+          <button onClick={handleLogout} className="flex items-center w-full px-2 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors">
             <LogOut className="w-4 h-4 mr-2" />
             Sign Out
           </button>
@@ -100,16 +102,19 @@ const AdminApp: React.FC = () => {
       </aside>
 
       <main className="flex-1 overflow-auto relative">
-        <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-slate-800 capitalize">
+        <header className="sticky top-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-8 py-4 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white capitalize">
             {currentView === 'REPORTS' ? 'Analytics & Reports' : currentView.toLowerCase().replace('_', ' ')}
           </h2>
-          <div className="text-sm text-slate-500">
-            {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <div className="flex items-center gap-6">
+            <div className="text-sm text-slate-500 dark:text-slate-400">
+              {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
+            <LanguageThemeToggle />
           </div>
         </header>
 
-        <div className="p-8 max-w-7xl mx-auto">
+        <div className="p-8 max-w-7xl mx-auto dark:bg-slate-950">
           {currentView === 'DASHBOARD' && <Dashboard user={user} />}
           {currentView === 'REPORTS' && <Reports />}
           {currentView === 'LOCATIONS' && isAdmin && <Locations />}

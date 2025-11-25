@@ -6,7 +6,6 @@ import Landing from './components/Landing';
 import Tracking from './components/Tracking';
 import SelfRegistration from './components/SelfRegistration';
 import { StorageService } from './services/storage';
-import { Monitor, Globe } from 'lucide-react';
 
 // Initialize Data Seeding
 StorageService.init();
@@ -22,7 +21,7 @@ const App: React.FC = () => {
 
   // For Demo/Testing purposes, we still keep the toggle state
   // If we are on localhost, allow toggling. If on production, respect domain unless toggled.
-  const [isAdminMode, setIsAdminMode] = useState(isSubdomainAdmin);
+  const [isAdminMode] = useState(isSubdomainAdmin);
 
   return (
     <>

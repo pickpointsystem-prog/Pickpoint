@@ -73,6 +73,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [search, setSearch] = useState('');
+  const [selectedForBulkPickup, setSelectedForBulkPickup] = useState<Set<string>>(new Set()); // Multi-select
   
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -220,7 +221,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     e.preventDefault();
     if (!formData.locationId) return alert("Select Location");
 
-    const pickupCode = Math.floor(1000 + Math.random() * 9000).toString();
+    // Generate 6-character alphanumeric code (uppercase)
+    const generatePickupCode = (): string => {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    };
+    const pickupCode = generatePickupCode();
     const newPkg: Package = {
       id: `pkg_${Date.now()}`,
       trackingNumber: formData.tracking,
@@ -283,6 +293,47 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       StorageService.savePackage(updated);
       setSelectedPkg(null);
       loadData();
+    }
+  };
+
+  const handleBulkPickup = () => {
+    if (selectedForBulkPickup.size === 0) {
+      alert('Pilih setidaknya 1 paket untuk diambil');
+      return;
+    }
+
+    const selectedPkgs = filteredPackages.filter(p => selectedForBulkPickup.has(p.id));
+    let totalFee = 0;
+    const details: string[] = [];
+
+    selectedPkgs.forEach(pkg => {
+      const loc = locations.find(l => l.id === pkg.locationId);
+      const cust = customers.find(c => c.phoneNumber === pkg.recipientPhone);
+      const fee = loc ? PricingService.calculateFee(pkg, loc, cust) : 0;
+      totalFee += fee;
+      details.push(`• ${pkg.recipientName} (${pkg.trackingNumber}): Rp ${fee.toLocaleString()}`);
+    });
+
+    const msg = `Konfirmasi Pickup Bulk (${selectedPkgs.length} paket):\n\n${details.join('\n')}\n\nTotal: Rp ${totalFee.toLocaleString()}`;
+    
+    if (confirm(msg)) {
+      selectedPkgs.forEach(pkg => {
+        const loc = locations.find(l => l.id === pkg.locationId);
+        const cust = customers.find(c => c.phoneNumber === pkg.recipientPhone);
+        const fee = loc ? PricingService.calculateFee(pkg, loc, cust) : 0;
+
+        const updated: Package = {
+          ...pkg,
+          status: 'PICKED',
+          dates: { ...pkg.dates, picked: new Date().toISOString() },
+          feePaid: fee
+        };
+        StorageService.savePackage(updated);
+      });
+
+      setSelectedForBulkPickup(new Set());
+      loadData();
+      alert(`${selectedPkgs.length} paket berhasil diambil!`);
     }
   };
 
@@ -401,12 +452,48 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
            </div>
         </div>
 
+        {/* Bulk Pickup Bar */}
+        {selectedForBulkPickup.size > 0 && (
+          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-2xl flex items-center gap-4 z-40">
+            <span className="font-bold">{selectedForBulkPickup.size} paket dipilih</span>
+            <div className="flex gap-2">
+              <button
+                onClick={handleBulkPickup}
+                className="bg-white text-blue-600 px-4 py-1.5 rounded font-bold text-sm hover:bg-blue-50 transition-colors"
+              >
+                Ambil Semua ({selectedForBulkPickup.size})
+              </button>
+              <button
+                onClick={() => setSelectedForBulkPickup(new Set())}
+                className="bg-blue-700 hover:bg-blue-800 px-3 py-1.5 rounded text-sm transition-colors"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Data Table */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-slate-500 border-b border-slate-100 uppercase tracking-wider text-xs">
                 <tr>
+                  <th className="px-4 py-4 font-bold w-12">
+                    <input
+                      type="checkbox"
+                      checked={selectedForBulkPickup.size === filteredPackages.filter(p => p.status === 'ARRIVED').length && filteredPackages.some(p => p.status === 'ARRIVED')}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          const arrivedIds = new Set(filteredPackages.filter(p => p.status === 'ARRIVED').map(p => p.id));
+                          setSelectedForBulkPickup(arrivedIds);
+                        } else {
+                          setSelectedForBulkPickup(new Set());
+                        }
+                      }}
+                      className="accent-blue-600"
+                    />
+                  </th>
                   <th className="px-6 py-4 font-bold">Package Info</th>
                   <th className="px-6 py-4 font-bold">Recipient</th>
                   <th className="px-6 py-4 font-bold">Date & Time</th>
@@ -417,8 +504,26 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filteredPackages.map(pkg => (
-                  <tr key={pkg.id} className="hover:bg-blue-50/50 cursor-pointer transition-colors group" onClick={() => setSelectedPkg(pkg)}>
-                    <td className="px-6 py-4">
+                  <tr key={pkg.id} className="hover:bg-blue-50/50 transition-colors group" onClick={() => pkg.status === 'ARRIVED' ? null : setSelectedPkg(pkg)}>
+                    <td className="px-4 py-4 w-12" onClick={(e) => e.stopPropagation()}>
+                      {pkg.status === 'ARRIVED' && (
+                        <input
+                          type="checkbox"
+                          checked={selectedForBulkPickup.has(pkg.id)}
+                          onChange={(e) => {
+                            const newSet = new Set(selectedForBulkPickup);
+                            if (e.target.checked) {
+                              newSet.add(pkg.id);
+                            } else {
+                              newSet.delete(pkg.id);
+                            }
+                            setSelectedForBulkPickup(newSet);
+                          }}
+                          className="accent-blue-600 cursor-pointer"
+                        />
+                      )}
+                    </td>
+                    <td className="px-6 py-4 cursor-pointer" onClick={() => setSelectedPkg(pkg)}>
                       <div className="font-mono text-slate-900 font-bold text-sm group-hover:text-blue-600">{pkg.trackingNumber}</div>
                       <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-1 font-medium"><Truck className="w-3 h-3" /> {pkg.courier} • Size {pkg.size}</div>
                     </td>
