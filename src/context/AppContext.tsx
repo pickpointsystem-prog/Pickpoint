@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, ReactNode } from 'react';
 
 type Language = 'id' | 'en';
 
@@ -78,6 +78,12 @@ const translations: Translations = {
     'location.enableMembership': 'Aktifkan Member',
     'location.dailyRate': 'Tarif Harian (Rp)',
     
+    // Reports
+    'reports.title': 'Laporan',
+
+    // Users
+    'users.title': 'Pengguna',
+    
     // Settings
     'settings.title': 'Pengaturan Sistem',
     'settings.waGateway': 'Gateway WhatsApp',
@@ -134,7 +140,7 @@ const translations: Translations = {
     'package.photo': 'Package Photo',
     
     // Customers
-    'customer.title': 'Customers & Members',
+    'customer.title': 'Customers',
     'customer.addNew': 'Add Customer',
     'customer.name': 'Full Name',
     'customer.unitNumber': 'Unit Number',
@@ -148,7 +154,7 @@ const translations: Translations = {
     'customer.membershipExpiry': 'Valid Until',
     
     // Locations
-    'location.title': 'Locations & Pricing',
+    'location.title': 'Locations',
     'location.addNew': 'Add Location',
     'location.name': 'Location Name',
     'location.pricing': 'Pricing Scheme',
@@ -159,8 +165,14 @@ const translations: Translations = {
     'location.enableMembership': 'Enable Membership',
     'location.dailyRate': 'Daily Rate (Rp)',
     
+    // Reports
+    'reports.title': 'Reports',
+
+    // Users
+    'users.title': 'Users',
+
     // Settings
-    'settings.title': 'System Settings',
+    'settings.title': 'Settings',
     'settings.waGateway': 'WhatsApp Gateway',
     'settings.apiKey': 'API Key',
     'settings.sender': 'Sender ID',
@@ -175,35 +187,28 @@ const translations: Translations = {
 
 interface AppContextType {
   language: Language;
-  setLanguage: (lang: Language) => void;
   t: (key: string) => string;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>(() => {
-    const saved = localStorage.getItem('pp_language');
-    return (saved as Language) || 'id';
-  });
-  
+  const language = 'en';
+
   useEffect(() => {
     // One-time cleanup of theme settings
     document.documentElement.classList.remove('dark');
     localStorage.removeItem('pp_theme');
+    // Set language to english and remove old setting
+    localStorage.setItem('pp_language', 'en');
   }, []);
-
-  const handleSetLanguage = (lang: Language) => {
-    setLanguage(lang);
-    localStorage.setItem('pp_language', lang);
-  };
 
   const t = (key: string): string => {
     return translations[language]?.[key] || key;
   };
 
   return (
-    <AppContext.Provider value={{ language, setLanguage: handleSetLanguage, t }}>
+    <AppContext.Provider value={{ language, t }}>
       {children}
     </AppContext.Provider>
   );
