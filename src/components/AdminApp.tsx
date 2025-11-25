@@ -130,8 +130,10 @@ const AdminApp: React.FC = () => {
           {currentView === 'USERS' && isAdmin && <Users />}
           {currentView === 'CUSTOMERS' && <Customers user={user} />}
           {currentView === 'SETTINGS' && isAdmin && <Settings />}
-        </div>
-      </main>
-    </div>
-  );
-};
+                </div>
+              </main>
+            </div>
+          );
+        };
+        
+        export default AdminApp;
