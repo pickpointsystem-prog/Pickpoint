@@ -11,6 +11,7 @@ interface Translations {
 
 const translations: Translations = {
   id: {
+    'sidebar.adminPanel': 'Panel Admin',
     // Common
     'common.save': 'Simpan',
     'common.cancel': 'Batal',
@@ -91,6 +92,7 @@ const translations: Translations = {
     'settings.saveChanges': 'Simpan Perubahan',
   },
   en: {
+    'sidebar.adminPanel': 'Admin Panel',
     // Common
     'common.save': 'Save',
     'common.cancel': 'Cancel',
@@ -174,9 +176,7 @@ const translations: Translations = {
 
 interface AppContextType {
   language: Language;
-  theme: Theme;
   setLanguage: (lang: Language) => void;
-  setTheme: (theme: Theme) => void;
   t: (key: string) => string;
 }
 
@@ -187,34 +187,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const saved = localStorage.getItem('pp_language');
     return (saved as Language) || 'id';
   });
-
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('pp_theme');
-    return (saved as Theme) || 'light';
-  });
-
+  
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
+    // One-time cleanup of theme settings
+    document.documentElement.classList.remove('dark');
+    localStorage.removeItem('pp_theme');
+  }, []);
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
     localStorage.setItem('pp_language', lang);
-  };
-
-  const handleSetTheme = (newTheme: Theme) => {
-    setTheme(newTheme);
-    localStorage.setItem('pp_theme', newTheme);
-    // Apply dark mode to document root
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
   };
 
   const t = (key: string): string => {
@@ -222,7 +204,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   return (
-    <AppContext.Provider value={{ language, theme, setLanguage: handleSetLanguage, setTheme: handleSetTheme, t }}>
+    <AppContext.Provider value={{ language, setLanguage: handleSetLanguage, t }}>
       {children}
     </AppContext.Provider>
   );

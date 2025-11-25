@@ -75,7 +75,7 @@ const AdminApp: React.FC = () => {
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">P</div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">Pickpoint</h1>
           </div>
-          <p className="text-xs text-slate-400 mt-1 pl-10 uppercase tracking-wider font-semibold">Admin Panel</p>
+          <p className="text-xs text-slate-400 mt-1 pl-10 uppercase tracking-wider font-semibold">{t('sidebar.adminPanel')}</p>
         </div>
 
         <nav className="flex-1 p-4 overflow-y-auto">
