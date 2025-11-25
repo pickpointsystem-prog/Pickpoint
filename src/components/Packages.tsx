@@ -7,6 +7,7 @@ import { COURIER_OPTIONS } from '../constants';
 import { WhatsAppService } from '../services/whatsapp';
 import { Search, Plus, QrCode, X, Truck, MessageCircle, Trash2, Camera, CheckCircle, Package as PackageIcon } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import BarcodeScanner from './BarcodeScanner';
 
 interface PackagesProps {
   user: User;
@@ -17,6 +18,7 @@ const Packages: React.FC<PackagesProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'HISTORY'>('ACTIVE');
   const [search, setSearch] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [selectedPkg, setSelectedPkg] = useState<Package | null>(null);
   
   // Data for Form
@@ -156,6 +158,11 @@ const Packages: React.FC<PackagesProps> = ({ user }) => {
       reader.readAsDataURL(e.target.files[0]);
     }
   };
+  
+  const handleScan = (code: string) => {
+    setFormData({...formData, tracking: code});
+    setIsScannerOpen(false);
+  }
 
   return (
     <div className="space-y-6">
@@ -247,7 +254,7 @@ const Packages: React.FC<PackagesProps> = ({ user }) => {
                    <label className="block text-xs font-semibold text-slate-500 mb-1">Tracking Number</label>
                    <div className="flex gap-2">
                      <input required className="w-full border rounded-lg px-3 py-2 text-sm" value={formData.tracking} onChange={e => setFormData({...formData, tracking: e.target.value})} placeholder="Scan or type..." />
-                     <button type="button" className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200"><QrCode className="w-5 h-5 text-slate-600" /></button>
+                     <button type="button" onClick={() => setIsScannerOpen(true)} className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200"><QrCode className="w-5 h-5 text-slate-600" /></button>
                    </div>
                  </div>
                  
@@ -409,6 +416,11 @@ const Packages: React.FC<PackagesProps> = ({ user }) => {
            </div>
         </div>
       )}
+      <BarcodeScanner 
+        isOpen={isScannerOpen} 
+        onClose={() => setIsScannerOpen(false)}
+        onScan={handleScan}
+      />
     </div>
   );
 };
