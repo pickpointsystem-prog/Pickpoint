@@ -11,7 +11,6 @@ import Reports from './Reports';
 import LanguageThemeToggle from './LanguageThemeToggle';
 import { LayoutDashboard, MapPin, Users as UsersIcon, Settings as SettingsIcon, LogOut, UserCircle, BarChart3 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
-import { useApp } from '../context/AppContext';
 
 type View = 'DASHBOARD' | 'LOCATIONS' | 'USERS' | 'CUSTOMERS' | 'SETTINGS' | 'REPORTS';
 

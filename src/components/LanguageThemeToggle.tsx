@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Globe, Sun, Moon } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 const LanguageThemeToggle: React.FC = () => {
