@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type Language = 'id' | 'en';
-type Theme = 'light' | 'dark';
 
 interface Translations {
   [key: string]: {
