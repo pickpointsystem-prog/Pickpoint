@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type Language = 'id' | 'en';
 type Theme = 'light' | 'dark';
@@ -192,6 +192,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const saved = localStorage.getItem('pp_theme');
     return (saved as Theme) || 'light';
   });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);

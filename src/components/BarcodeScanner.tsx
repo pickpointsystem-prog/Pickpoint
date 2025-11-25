@@ -17,6 +17,8 @@ const BarcodeScanner: React.FC<BarcodeModalProps> = ({ isOpen, onClose, onScan }
   useEffect(() => {
     if (!isOpen) return;
 
+    let animationFrameId: number;
+
     const startScanning = async () => {
       try {
         setError('');
@@ -36,18 +38,24 @@ const BarcodeScanner: React.FC<BarcodeModalProps> = ({ isOpen, onClose, onScan }
     };
 
     const scanFrame = () => {
-      if (!videoRef.current || !canvasRef.current || !isScanning) return;
+      if (!videoRef.current || !canvasRef.current) return;
 
+      const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
       if (!context) return;
 
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
 
-      context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      if (canvas.width === 0 || canvas.height === 0) {
+        animationFrameId = requestAnimationFrame(scanFrame);
+        return;
+      }
+
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height);
 
       if (code) {
         onScan(code.data);
@@ -56,21 +64,27 @@ const BarcodeScanner: React.FC<BarcodeModalProps> = ({ isOpen, onClose, onScan }
         return;
       }
 
-      requestAnimationFrame(scanFrame);
+      animationFrameId = requestAnimationFrame(scanFrame);
     };
 
     startScanning();
 
-    return () => stopScanning();
-  }, [isOpen, isScanning]);
+    const stopScanning = () => {
+      if (videoRef.current?.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+        tracks.forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+      }
+      setIsScanning(false);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
 
-  const stopScanning = () => {
-    if (videoRef.current?.srcObject) {
-      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach(track => track.stop());
-    }
-    setIsScanning(false);
-  };
+    return () => {
+      stopScanning();
+    };
+  }, [isOpen, onScan, onClose]);
 
   if (!isOpen) return null;
 
