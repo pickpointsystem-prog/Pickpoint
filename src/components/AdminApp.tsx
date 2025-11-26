@@ -82,7 +82,7 @@ const AdminApp: React.FC = () => {
 
       {/* Sidebar */}
       <aside className={twMerge(
-        "w-64 bg-white border-r border-slate-200 flex-col z-40 transform transition-transform duration-300 ease-in-out md:flex md:translate-x-0",
+        "w-64 bg-white border-r border-slate-200 flex-col z-40 transform transition-transform duration-300 ease-in-out md:flex md:translate-x-0 shadow-lg",
         isSidebarOpen ? "translate-x-0 fixed h-full" : "-translate-x-full absolute"
       )}>
         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
@@ -128,8 +128,8 @@ const AdminApp: React.FC = () => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto relative">
-        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 md:px-8 py-4 flex justify-between items-center">
+      <main className={`flex-1 overflow-auto relative ${isSidebarOpen ? 'bg-black/10' : ''}`}>
+        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 md:px-8 py-4 flex justify-between items-center shadow-md">
           <div className="flex items-center gap-4">
             <button className="md:hidden text-slate-600" onClick={() => setSidebarOpen(true)}>
                 <Menu className="w-6 h-6"/>
@@ -145,7 +145,7 @@ const AdminApp: React.FC = () => {
           </div>
         </header>
 
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
           {currentView === 'DASHBOARD' && <Dashboard user={user} />}
           {currentView === 'REPORTS' && <Reports />}
           {currentView === 'LOCATIONS' && isAdmin && <Locations />}

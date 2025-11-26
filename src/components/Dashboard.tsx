@@ -406,7 +406,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       </div>
 
       {/* 1. KPI SECTION */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Row 1: Operations */}
         <StatCard label="Paket Masuk" value={stats?.packagesIn || 0} icon={ArrowDownRight} color="bg-blue-500" sub="In selected period" />
         <StatCard label="Paket Keluar" value={stats?.packagesOut || 0} icon={ArrowUpRight} color="bg-green-500" sub="Out selected period" />
@@ -476,8 +476,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         )}
 
         {/* Data Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-slate-500 border-b border-slate-100 uppercase tracking-wider text-xs">
                 <tr>
@@ -576,12 +575,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       {/* 1. ADD PACKAGE MODAL */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) setIsAddModalOpen(false) }}>
-          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl w-full sm:max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2"><Plus className="w-5 h-5 text-blue-600" /> Receive Package</h3>
               <button onClick={() => setIsAddModalOpen(false)}><X className="w-5 h-5 text-slate-400 hover:text-red-500 transition-colors" /></button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
                <div className="space-y-5">
                  <div>
                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Tracking / AWB</label>
@@ -730,7 +729,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       {/* 2. DETAIL & ACTION MODAL */}
       {selectedPkg && (
         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) setSelectedPkg(null) }}>
-           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+           <div className="bg-white rounded-2xl w-full sm:max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
               <div className="relative h-48 bg-slate-100 group">
                 {selectedPkg.photo ? (
                   <img src={selectedPkg.photo} className="w-full h-full object-cover" />

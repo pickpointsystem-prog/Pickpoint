@@ -104,7 +104,7 @@ const Customers: React.FC<{ user: User }> = ({ user }) => {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-slate-500 border-b border-slate-100 uppercase tracking-wider text-xs">
             <tr>
@@ -181,7 +181,7 @@ const Customers: React.FC<{ user: User }> = ({ user }) => {
       {/* --- MODAL 1: ADD CUSTOMER --- */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) setIsAddModalOpen(false) }}>
-           <form onSubmit={handleSaveCustomer} className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+           <form onSubmit={handleSaveCustomer} className="bg-white rounded-2xl p-6 w-full sm:max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
              <div className="flex justify-between items-center mb-6">
                  <h3 className="font-bold text-lg text-slate-800">New Customer</h3>
                  <button type="button" onClick={() => setIsAddModalOpen(false)}><X className="w-5 h-5 text-slate-400" /></button>
@@ -227,7 +227,7 @@ const Customers: React.FC<{ user: User }> = ({ user }) => {
       {/* --- MODAL 2: MANAGE MEMBERSHIP --- */}
       {managingCust && (
         <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) setManagingCust(null) }}>
-           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+           <div className="bg-white rounded-2xl w-full sm:max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                {/* Header with Pattern */}
                <div className="bg-slate-900 p-6 text-white relative overflow-hidden">
                    <div className="absolute top-0 right-0 p-4 opacity-10"><CreditCard className="w-24 h-24 transform rotate-12" /></div>

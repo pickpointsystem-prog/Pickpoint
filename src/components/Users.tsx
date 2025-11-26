@@ -41,7 +41,7 @@ const Users: React.FC = () => {
         <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-700"><Plus className="w-4 h-4" /> Add User</button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-slate-500">
             <tr>
@@ -74,25 +74,25 @@ const Users: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) setIsModalOpen(false) }}>
            <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 w-full max-w-md space-y-4 shadow-xl animate-in zoom-in-95 duration-200">
               <h3 className="font-bold text-lg">Add User</h3>
-              <input className="w-full border p-2 rounded" placeholder="Full Name" onChange={e => setFormData({...formData, name: e.target.value})} required />
-              <input className="w-full border p-2 rounded" placeholder="Username" onChange={e => setFormData({...formData, username: e.target.value})} required />
-              <input className="w-full border p-2 rounded" type="password" placeholder="Password" onChange={e => setFormData({...formData, password: e.target.value})} required />
+              <input className="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Full Name" onChange={e => setFormData({...formData, name: e.target.value})} required />
+              <input className="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Username" onChange={e => setFormData({...formData, username: e.target.value})} required />
+              <input className="w-full border border-slate-200 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" type="password" placeholder="Password" onChange={e => setFormData({...formData, password: e.target.value})} required />
               
-              <select className="w-full border p-2 rounded" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value as Role})}>
+              <select className="w-full border border-slate-200 p-2.5 rounded-lg text-sm bg-white" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value as Role})}>
                 <option value="ADMIN">Admin</option>
                 <option value="STAFF">Staff</option>
               </select>
 
               {formData.role === 'STAFF' && (
-                <select className="w-full border p-2 rounded" onChange={e => setFormData({...formData, locationId: e.target.value})} required>
+                <select className="w-full border border-slate-200 p-2.5 rounded-lg text-sm bg-white" onChange={e => setFormData({...formData, locationId: e.target.value})} required>
                   <option value="">Select Location</option>
                   {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                 </select>
               )}
 
               <div className="flex justify-end gap-2 mt-4">
-                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-500">Cancel</button>
-                 <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
+                 <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors">Save</button>
               </div>
            </form>
         </div>

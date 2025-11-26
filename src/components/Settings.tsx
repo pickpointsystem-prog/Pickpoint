@@ -61,7 +61,7 @@ const Settings: React.FC = () => {
       </div>
 
       {activeTab === 'CONFIG' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
             {/* Connection Settings */}
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5 h-fit">
                 <div>

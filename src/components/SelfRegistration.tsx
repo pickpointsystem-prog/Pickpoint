@@ -53,7 +53,7 @@ const SelfRegistration: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-xl w-full sm:max-w-md overflow-hidden">
         <div className="bg-slate-900 p-6 text-white text-center">
           <h1 className="text-xl font-bold">Resident Registration</h1>
           <p className="text-slate-400 text-sm mt-1">Register your WhatsApp to receive package alerts</p>
