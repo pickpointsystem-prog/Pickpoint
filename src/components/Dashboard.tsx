@@ -10,7 +10,8 @@ import BarcodeScanner from './BarcodeScanner';
 import { 
   Package as PackageIcon, DollarSign, Users, Activity, 
   ArrowUpRight, ArrowDownRight, Search, Plus, 
-  QrCode, X, Truck, CheckCircle, MessageCircle, Trash2, Camera, Lock, TrendingUp, Inbox
+  QrCode, X, Truck, CheckCircle, MessageCircle, Trash2, Camera, Lock, TrendingUp, Inbox,
+  ChevronUp, ChevronDown
 } from 'lucide-react';
 import EmptyState from './EmptyState';
 import { twMerge } from 'tailwind-merge';
@@ -73,6 +74,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   // --- STATE: DASHBOARD & PACKAGES ---
   const [filter, setFilter] = useState<'DAY' | 'WEEK' | 'MONTH' | 'ALL'>('DAY');
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isStatsExpanded, setIsStatsExpanded] = useState(true);
   
   // Package Management State
   const [packages, setPackages] = useState<Package[]>([]);
@@ -437,38 +439,60 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   return (
     <div className="space-y-6">
       
-      {/* 0. FILTER BAR (TOP LEFT) */}
-      <div className="flex justify-between items-end">
-        <div className="flex items-center bg-white rounded-lg border border-slate-200 p-1 w-fit shadow-sm">
-           {(['DAY', 'WEEK', 'MONTH', 'ALL'] as const).map(f => (
-             <button 
-               key={f}
-               onClick={() => setFilter(f)}
-               className={twMerge(
-                 "px-4 py-1.5 text-xs font-bold rounded-md transition-all",
-                 filter === f ? "bg-slate-800 text-white shadow" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-               )}
-             >
-               {f}
-             </button>
-           ))}
-        </div>
+      {/* Toggle Stats Button */}
+      <div className="flex justify-end">
+        <button 
+            onClick={() => setIsStatsExpanded(!isStatsExpanded)}
+            className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm"
+        >
+            {isStatsExpanded ? (
+                <>
+                    Hide Stats <ChevronUp size={14} />
+                </>
+            ) : (
+                <>
+                    Show Stats <ChevronDown size={14} />
+                </>
+            )}
+        </button>
       </div>
 
-      {/* 1. KPI SECTION */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Row 1: Operations */}
-        <StatCard label="Paket Masuk" value={stats?.packagesIn || 0} icon={ArrowDownRight} gradient={BRAND_COLORS.gradients.primary} sub="In selected period" trend="↑ 12% vs yesterday" />
-        <StatCard label="Paket Keluar" value={stats?.packagesOut || 0} icon={ArrowUpRight} gradient={BRAND_COLORS.gradients.success} sub="Out selected period" trend="↑ 8% vs yesterday" />
-        <StatCard label="Total Paket" value={stats?.inventoryActive || 0} icon={PackageIcon} gradient={BRAND_COLORS.gradients.warning} sub="Active Inventory" />
-        <StatCard label="Members" value={stats?.membersActive || 0} icon={Users} gradient={BRAND_COLORS.gradients.purple} sub="Active Subscriptions" />
-        
-        {/* Row 2: Revenue */}
-        <StatCard label="Rev. Pengantaran" value={`Rp ${(stats?.revDelivery || 0).toLocaleString()}`} icon={Truck} gradient="bg-gradient-to-br from-teal-500 to-teal-700" />
-        <StatCard label="Rev. Membership" value={`Rp ${(stats?.revMembership || 0).toLocaleString()}`} icon={Users} gradient={BRAND_COLORS.gradients.indigo} />
-        <StatCard label="Rev. Paket" value={`Rp ${(stats?.revPackage || 0).toLocaleString()}`} icon={Activity} gradient="bg-gradient-to-br from-emerald-500 to-emerald-700" />
-        <StatCard label="Total Revenue" value={`Rp ${(stats?.totalRevenue || 0).toLocaleString()}`} icon={DollarSign} gradient={BRAND_COLORS.gradients.dark} sub="Gross Total" />
-      </div>
+      {isStatsExpanded && (
+        <div className="space-y-6 animate-in slide-in-from-top-4 duration-300 fade-in">
+          {/* 0. FILTER BAR (TOP LEFT) */}
+          <div className="flex justify-between items-end">
+            <div className="flex items-center bg-white rounded-lg border border-slate-200 p-1 w-fit shadow-sm">
+              {(['DAY', 'WEEK', 'MONTH', 'ALL'] as const).map(f => (
+                <button 
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={twMerge(
+                    "px-4 py-1.5 text-xs font-bold rounded-md transition-all",
+                    filter === f ? "bg-slate-800 text-white shadow" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  )}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 1. KPI SECTION */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Row 1: Operations */}
+            <StatCard label="Paket Masuk" value={stats?.packagesIn || 0} icon={ArrowDownRight} gradient={BRAND_COLORS.gradients.primary} sub="In selected period" trend="↑ 12% vs yesterday" />
+            <StatCard label="Paket Keluar" value={stats?.packagesOut || 0} icon={ArrowUpRight} gradient={BRAND_COLORS.gradients.success} sub="Out selected period" trend="↑ 8% vs yesterday" />
+            <StatCard label="Total Paket" value={stats?.inventoryActive || 0} icon={PackageIcon} gradient={BRAND_COLORS.gradients.warning} sub="Active Inventory" />
+            <StatCard label="Members" value={stats?.membersActive || 0} icon={Users} gradient={BRAND_COLORS.gradients.purple} sub="Active Subscriptions" />
+            
+            {/* Row 2: Revenue */}
+            <StatCard label="Rev. Pengantaran" value={`Rp ${(stats?.revDelivery || 0).toLocaleString()}`} icon={Truck} gradient="bg-gradient-to-br from-teal-500 to-teal-700" />
+            <StatCard label="Rev. Membership" value={`Rp ${(stats?.revMembership || 0).toLocaleString()}`} icon={Users} gradient={BRAND_COLORS.gradients.indigo} />
+            <StatCard label="Rev. Paket" value={`Rp ${(stats?.revPackage || 0).toLocaleString()}`} icon={Activity} gradient="bg-gradient-to-br from-emerald-500 to-emerald-700" />
+            <StatCard label="Total Revenue" value={`Rp ${(stats?.totalRevenue || 0).toLocaleString()}`} icon={DollarSign} gradient={BRAND_COLORS.gradients.dark} sub="Gross Total" />
+          </div>
+        </div>
+      )}
 
       {/* 2. PACKAGES & OVERVIEW SECTION */}
       <div className="space-y-4 pt-4">
