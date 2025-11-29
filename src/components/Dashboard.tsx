@@ -1,5 +1,17 @@
-
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { User, Package, DashboardStats, PackageSize, Customer, Location } from '../types';
+import { StorageService } from '../services/storage';
+import { PricingService } from '../services/pricing';
+import { WhatsAppService } from '../services/whatsapp';
+import { COURIER_OPTIONS } from '../constants';
+import BarcodeScanner from './BarcodeScanner';
+import { 
+  Package as PackageIcon, DollarSign, Users, Activity, 
+  ArrowUpRight, ArrowDownRight, Search, Plus, 
+  QrCode, X, Truck, CheckCircle, MessageCircle, Trash2, Camera, Lock
+} from 'lucide-react';
+import { twMerge } from 'tailwind-merge';
+
 // Helper: Export CSV
 function exportPackagesToCSV(packages: Package[]) {
   const headers = [
@@ -47,18 +59,6 @@ function exportPackagesToCSV(packages: Package[]) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-import { User, Package, DashboardStats, PackageSize, Customer, Location } from '../types';
-import { StorageService } from '../services/storage';
-import { PricingService } from '../services/pricing';
-import { WhatsAppService } from '../services/whatsapp';
-import { COURIER_OPTIONS } from '../constants';
-import BarcodeScanner from './BarcodeScanner';
-import { 
-  Package as PackageIcon, DollarSign, Users, Activity, 
-  ArrowUpRight, ArrowDownRight, Search, Plus, 
-  QrCode, X, Truck, CheckCircle, MessageCircle, Trash2, Camera, Lock
-} from 'lucide-react';
-import { twMerge } from 'tailwind-merge';
 
 interface DashboardProps {
   user: User;
@@ -505,7 +505,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filteredPackages.map(pkg => (
-                  <tr key={pkg.id} className="hover:bg-blue-50/50 transition-colors group" onClick={() => pkg.status === 'ARRIVED' ? null : setSelectedPkg(pkg)}>
+                  <tr key={pkg.id} className="hover:bg-blue-50/50 transition-colors group" onClick={() => { if(pkg.status !== 'ARRIVED') setSelectedPkg(pkg); }}>
                     <td className="px-4 py-4 w-12" onClick={(e) => e.stopPropagation()}>
                       {pkg.status === 'ARRIVED' && (
                         <input
