@@ -20,12 +20,15 @@ const sendRawMessage = async (phone: string, message: string, settings: AppSetti
   };
 
   try {
-    console.log(`[WA Gateway] Sending to ${formattedPhone}...`);
-    
-    const response = await fetch(settings.waEndpoint, {
+    const endpoint = settings.waEndpoint || config.whatsappApiUrl;
+    console.log(`[WA Gateway] Endpoint: ${endpoint} | Sending to ${formattedPhone}...`);
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        // Many gateways expect bearer auth; keep body api_key for compatibility
+        ...(settings.waApiKey ? { 'Authorization': `Bearer ${settings.waApiKey}` } : {})
       },
       body: JSON.stringify(payload)
     });
@@ -35,7 +38,15 @@ const sendRawMessage = async (phone: string, message: string, settings: AppSetti
         throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    // Try read JSON; if fails, read text for diagnostics
+    let data: any;
+    try {
+      data = await response.json();
+    } catch {
+      const text = await response.text();
+      console.error('[WA Gateway] Non-JSON response:', text);
+      return { success: false, error: 'Invalid gateway response (non-JSON)' };
+    }
     
     if (data.status === true) {
       console.log('[WA Gateway] Success:', data);
@@ -49,7 +60,7 @@ const sendRawMessage = async (phone: string, message: string, settings: AppSetti
     console.error("[WA Gateway] Network/Fetch Failed", error);
     let errMsg = error.message;
     if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
-        errMsg = "Network Error: Possible CORS issue or Endpoint unreachable. If using browser, check console.";
+        errMsg = "Network Error: Possible CORS issue atau endpoint unreachable. Pertimbangkan proxy server (Vercel/Cloudflare) untuk menghindari CORS.";
     }
     return { success: false, error: errMsg };
   }

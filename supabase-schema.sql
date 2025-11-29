@@ -105,3 +105,12 @@ create policy "Public read activities" on activities for select using (true);
 
 -- Upsert friendly: ensure primary keys from app are unique
 -- App generates IDs as strings; you can switch to uuid by updating code and using uuid_generate_v4().
+
+-- Seed sample data for quick validation (safe: skips if id exists)
+insert into locations (id, name, pricing, enableDelivery, deliveryFee, enableMembership, membershipFee)
+values ('loc-1', 'Main Lobby', '{"type":"FLAT","gracePeriodDays":0,"flatRate":10000}', false, 0, false, 0)
+on conflict (id) do nothing;
+
+insert into users (id, username, password, name, role, locationId)
+values ('user-1', 'admin', NULL, 'Administrator', 'ADMIN', 'loc-1')
+on conflict (id) do nothing;

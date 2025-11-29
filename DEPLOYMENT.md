@@ -92,7 +92,7 @@ npm run preview:demo
 |----------|-------------|---------|
 | `VITE_APP_ENV` | Environment name | `production`, `qa`, `demo`, `development` |
 | `VITE_WHATSAPP_TOKEN` | WhatsApp API token | Your API key |
-| `VITE_WHATSAPP_API_URL` | WhatsApp API endpoint | `https://api.whatsapp.com/send` |
+| `VITE_WHATSAPP_API_URL` | WhatsApp API endpoint (proxy) | `/api/wa-proxy` |
 | `VITE_PUBLIC_DOMAIN` | Public domain | `pickpoint.my.id` |
 | `VITE_ADMIN_DOMAIN` | Admin domain | `admin.pickpoint.my.id` |
 | `VITE_ENABLE_ANALYTICS` | Enable analytics | `true` / `false` |
@@ -254,6 +254,12 @@ npm run build:production
 - Verify DNS settings point to Vercel
 - Check Vercel project domain configuration
 - Ensure `VITE_PUBLIC_DOMAIN` matches actual domain
+
+### Notifications Fail (CORS)
+- Use the proxy function `api/wa-proxy.ts`
+- Client: set `VITE_WHATSAPP_API_URL=/api/wa-proxy`
+- Server (Vercel): set `WA_GATEWAY_URL` to your actual gateway URL (e.g., `https://seen.getsender.id/send-message`)
+- Alternatively, provide `endpoint` in the request body so the proxy forwards to that URL
 
 ---
 

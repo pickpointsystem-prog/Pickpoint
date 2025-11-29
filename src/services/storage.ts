@@ -177,3 +177,40 @@ export const StorageService = {
     set(SEED_KEYS.ACTIVITIES, logs);
     SupabaseService.insertActivity(activity);
   },
+
+  // Manual full sync to Supabase (one-click seed)
+  syncAllToSupabase: async () => {
+    if (!SupabaseService.isReady()) {
+      return { ok: false, message: 'Supabase not configured' };
+    }
+    const users = get<User[]>(SEED_KEYS.USERS, []);
+    const locations = get<Location[]>(SEED_KEYS.LOCATIONS, []);
+    const packages = get<Package[]>(SEED_KEYS.PACKAGES, []);
+    const customers = get<Customer[]>(SEED_KEYS.CUSTOMERS, []);
+    const activities = get<ActivityLog[]>(SEED_KEYS.ACTIVITIES, []);
+    const settings = get<AppSettings>(SEED_KEYS.SETTINGS, INITIAL_SETTINGS);
+
+    try {
+      await SupabaseService.upsertTable('locations', locations);
+      await SupabaseService.upsertTable('users', users);
+      await SupabaseService.upsertTable('packages', packages);
+      await SupabaseService.upsertTable('customers', customers);
+      await SupabaseService.upsertTable('activities', activities);
+      await SupabaseService.upsertTable('settings', [settings]);
+
+      return {
+        ok: true,
+        counts: {
+          locations: locations.length,
+          users: users.length,
+          packages: packages.length,
+          customers: customers.length,
+          activities: activities.length,
+          settings: 1,
+        }
+      };
+    } catch (e) {
+      return { ok: false, message: 'Sync failed' };
+    }
+  },
+};
