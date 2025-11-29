@@ -43,21 +43,36 @@ const AdminApp: React.FC = () => {
 
   const isAdmin = user.role === 'ADMIN';
 
-  const NavItem = ({ view, icon: Icon, label, translationKey }: { view: View; icon: any; label: string, translationKey: string }) => (
+  const NavItem = ({ view, icon: Icon, label, translationKey, badge }: { view: View; icon: any; label: string, translationKey: string, badge?: number }) => (
     <button
       onClick={() => {
         setCurrentView(view);
         setSidebarOpen(false); // Close sidebar on navigation
       }}
       className={twMerge(
-        "flex items-center w-full px-4 py-3 text-sm font-medium transition-colors rounded-lg mb-1",
+        "flex items-center justify-between w-full px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg mb-1 group",
         currentView === view
-          ? "bg-blue-600 text-white shadow-md"
-          : "text-slate-600 hover:bg-blue-50"
+          ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-200 scale-105"
+          : "text-slate-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 hover:scale-102 hover:shadow-sm"
       )}
     >
-      <Icon className="w-5 h-5 mr-3" />
-      {t(translationKey) || label}
+      <div className="flex items-center">
+        <Icon className={twMerge(
+          "w-5 h-5 mr-3 transition-transform",
+          currentView === view ? "scale-110" : "group-hover:scale-110"
+        )} />
+        {t(translationKey) || label}
+      </div>
+      {badge && badge > 0 && (
+        <span className={twMerge(
+          "px-2 py-0.5 rounded-full text-xs font-bold",
+          currentView === view 
+            ? "bg-white text-blue-600" 
+            : "bg-red-500 text-white group-hover:scale-110"
+        )}>
+          {badge}
+        </span>
+      )}
     </button>
   );
 

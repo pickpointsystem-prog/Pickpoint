@@ -6,8 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:production": "tsc && vite build --mode production",
+    "build:qa": "tsc && vite build --mode qa",
+    "build:demo": "tsc && vite build --mode demo",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:production": "vite preview --mode production",
+    "preview:qa": "vite preview --mode qa",
+    "preview:demo": "vite preview --mode demo"
   },
   "dependencies": {
     "clsx": "^2.1.0",

@@ -1,20 +1,29 @@
-
 import { User, Location, Package, Customer, AppSettings } from '../types';
 import { INITIAL_USERS, INITIAL_LOCATIONS, INITIAL_SETTINGS, SEED_KEYS, INITIAL_CUSTOMERS } from '../constants';
+import config from '../config/environment';
 
-// Helper to get from storage safely
+// Add environment prefix to storage keys
+const prefixKey = (key: string): string => `${config.storagePrefix}${key}`;
+
+// Helper to get from storage safely with environment prefix
 function get<T>(key: string, defaultVal: T): T {
   try {
-    const item = localStorage.getItem(key);
+    const prefixedKey = prefixKey(key);
+    const item = localStorage.getItem(prefixedKey);
     return item ? JSON.parse(item) : defaultVal;
   } catch {
     return defaultVal;
   }
 }
 
-// Helper to set storage
+// Helper to set storage with environment prefix
 function set(key: string, value: any) {
-  localStorage.setItem(key, JSON.stringify(value));
+  const prefixedKey = prefixKey(key);
+  localStorage.setItem(prefixedKey, JSON.stringify(value));
+  
+  if (config.enableDebugMode) {
+    console.log(`💾 Storage [${config.env}]:`, { key: prefixedKey, itemCount: Array.isArray(value) ? value.length : 1 });
+  }
 }
 
 export const StorageService = {

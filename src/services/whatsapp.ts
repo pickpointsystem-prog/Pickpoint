@@ -1,5 +1,5 @@
-
 import { AppSettings, Package, Location, Customer } from '../types';
+import config from '../config/environment';
 
 // Generic helper to send raw message
 const sendRawMessage = async (phone: string, message: string, settings: AppSettings): Promise<{success: boolean, error?: string}> => {
@@ -58,7 +58,12 @@ const sendRawMessage = async (phone: string, message: string, settings: AppSetti
 export const WhatsAppService = {
   // 1. New Package Notification
   sendNotification: async (pkg: Package, location: Location, settings: AppSettings): Promise<boolean> => {
-    const pickupLink = `https://pickpoint.my.id/tracking?id=${pkg.trackingNumber}`;
+    // Use environment-aware public domain
+    const publicUrl = config.env === 'development' 
+      ? `http://${config.publicDomain}`
+      : `https://${config.publicDomain}`;
+    
+    const pickupLink = `${publicUrl}/tracking?id=${pkg.trackingNumber}`;
     
     let message = settings.waTemplatePackage || '';
     message = message
@@ -71,6 +76,17 @@ export const WhatsAppService = {
       .replace('{link}', pickupLink);
 
     const result = await sendRawMessage(pkg.recipientPhone, message, settings);
+    
+    if (config.enableDebugMode) {
+      console.log('📱 WhatsApp Notification:', {
+        environment: config.env,
+        recipient: pkg.recipientPhone,
+        tracking: pkg.trackingNumber,
+        link: pickupLink,
+        success: result.success
+      });
+    }
+    
     return result.success;
   },
 

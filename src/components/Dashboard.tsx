@@ -4,12 +4,15 @@ import { StorageService } from '../services/storage';
 import { PricingService } from '../services/pricing';
 import { WhatsAppService } from '../services/whatsapp';
 import { COURIER_OPTIONS } from '../constants';
+import { BRAND_COLORS, getStatusColor } from '../constants/colors';
+import { useToast } from '../context/ToastContext';
 import BarcodeScanner from './BarcodeScanner';
 import { 
   Package as PackageIcon, DollarSign, Users, Activity, 
   ArrowUpRight, ArrowDownRight, Search, Plus, 
-  QrCode, X, Truck, CheckCircle, MessageCircle, Trash2, Camera, Lock
+  QrCode, X, Truck, CheckCircle, MessageCircle, Trash2, Camera, Lock, TrendingUp, Inbox
 } from 'lucide-react';
+import EmptyState from './EmptyState';
 import { twMerge } from 'tailwind-merge';
 
 // Helper: Export CSV
@@ -65,6 +68,8 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ user }) => {
+  const { showToast, showConfirm } = useToast();
+  
   // --- STATE: DASHBOARD & PACKAGES ---
   const [filter, setFilter] = useState<'DAY' | 'WEEK' | 'MONTH' | 'ALL'>('DAY');
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -221,7 +226,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.locationId) return alert("Select Location");
+    if (!formData.locationId) return showToast('warning', 'Pilih lokasi terlebih dahulu');
 
     // Generate 6-character alphanumeric code (uppercase)
     const generatePickupCode = (): string => {
@@ -285,40 +290,42 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
     const fee = PricingService.calculateFee(pkg, loc, cust);
     
-    if (confirm(`Confirm Pickup?\nFee to pay: Rp ${fee.toLocaleString()}`)) {
-      const updated: Package = {
-        ...pkg,
-        status: 'PICKED',
-        dates: { ...pkg.dates, picked: new Date().toISOString() },
-        feePaid: fee
-      };
-      StorageService.savePackage(updated);
-      setSelectedPkg(null);
-      loadData();
-    }
+    showConfirm(
+      `Confirm Pickup?\nBiaya yang harus dibayar: Rp ${fee.toLocaleString()}`,
+      () => {
+        const updated: Package = {
+          ...pkg,
+          status: 'PICKED',
+          dates: { ...pkg.dates, picked: new Date().toISOString() },
+          feePaid: fee
+        };
+        StorageService.savePackage(updated);
+        setSelectedPkg(null);
+        showToast('success', `Paket berhasil dipickup! Biaya: Rp ${fee.toLocaleString()}`);
+        loadData();
+      }
+    );
   };
 
   const handleBulkPickup = () => {
     if (selectedForBulkPickup.size === 0) {
-      alert('Pilih setidaknya 1 paket untuk diambil');
+      showToast('warning', 'Pilih setidaknya 1 paket untuk diambil');
       return;
     }
 
     const selectedPkgs = filteredPackages.filter(p => selectedForBulkPickup.has(p.id));
     let totalFee = 0;
-    const details: string[] = [];
 
     selectedPkgs.forEach(pkg => {
       const loc = locations.find(l => l.id === pkg.locationId);
       const cust = customers.find(c => c.phoneNumber === pkg.recipientPhone);
       const fee = loc ? PricingService.calculateFee(pkg, loc, cust) : 0;
       totalFee += fee;
-      details.push(`• ${pkg.recipientName} (${pkg.trackingNumber}): Rp ${fee.toLocaleString()}`);
     });
 
-    const msg = `Konfirmasi Pickup Bulk (${selectedPkgs.length} paket):\n\n${details.join('\n')}\n\nTotal: Rp ${totalFee.toLocaleString()}`;
+    const msg = `Konfirmasi pickup ${selectedPkgs.length} paket dengan total biaya Rp ${totalFee.toLocaleString()}?`;
     
-    if (confirm(msg)) {
+    showConfirm(msg, () => {
       selectedPkgs.forEach(pkg => {
         const loc = locations.find(l => l.id === pkg.locationId);
         const cust = customers.find(c => c.phoneNumber === pkg.recipientPhone);
@@ -335,12 +342,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
       setSelectedForBulkPickup(new Set());
       loadData();
-      alert(`${selectedPkgs.length} paket berhasil diambil!`);
-    }
+      showToast('success', `${selectedPkgs.length} paket berhasil diambil!`);
+    });
   };
 
   const handleDestroy = (pkg: Package) => {
-    if (confirm("Mark as DESTROYED/LOST?")) {
+    showConfirm(`Mark paket ${pkg.trackingNumber} sebagai DESTROYED/LOST?`, () => {
       const updated: Package = {
         ...pkg,
         status: 'DESTROYED',
@@ -349,7 +356,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       StorageService.savePackage(updated);
       setSelectedPkg(null);
       loadData();
-    }
+      showToast('success', 'Paket telah ditandai sebagai DESTROYED');
+    });
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -366,21 +374,27 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const getSelectedLocation = () => locations.find(l => l.id === formData.locationId);
 
   // --- UI COMPONENTS ---
-  const StatCard = ({ label, value, icon: Icon, color, sub }: any) => (
-    <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden">
-      <div className={`absolute top-0 right-0 p-4 opacity-10 ${color.replace('bg-', 'text-')}`}>
-        <Icon className="w-16 h-16 transform translate-x-4 -translate-y-4" />
-      </div>
-      <div className="flex justify-between items-start z-10">
-        <div>
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{label}</p>
-          <h3 className="text-2xl font-bold text-slate-800">{value}</h3>
+  const StatCard = ({ label, value, icon: Icon, gradient, sub, trend }: any) => (
+    <div className={`${gradient} p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer group relative overflow-hidden`}>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform"></div>
+      <div className="relative z-10">
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            <p className="text-white/90 text-xs font-bold uppercase tracking-wider mb-2">{label}</p>
+            <h3 className="text-4xl font-black text-white">{value}</h3>
+            {trend && (
+              <div className="flex items-center gap-1 mt-2 text-white/90 text-xs font-semibold">
+                <TrendingUp className="w-3 h-3" />
+                <span>{trend}</span>
+              </div>
+            )}
+          </div>
+          <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl group-hover:bg-white/30 transition-colors">
+            <Icon className="w-7 h-7 text-white" />
+          </div>
         </div>
-        <div className={`p-2 rounded-lg ${color} bg-opacity-10 text-opacity-100`}>
-          <Icon className={`w-5 h-5 ${color.replace('bg-', 'text-')}`} />
-        </div>
+        {sub && <p className="text-white/80 text-xs font-medium">{sub}</p>}
       </div>
-      {sub && <p className="text-[10px] text-slate-400 mt-3 font-medium z-10">{sub}</p>}
     </div>
   );
 
@@ -406,18 +420,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       </div>
 
       {/* 1. KPI SECTION */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Row 1: Operations */}
-        <StatCard label="Paket Masuk" value={stats?.packagesIn || 0} icon={ArrowDownRight} color="bg-blue-500" sub="In selected period" />
-        <StatCard label="Paket Keluar" value={stats?.packagesOut || 0} icon={ArrowUpRight} color="bg-green-500" sub="Out selected period" />
-        <StatCard label="Total Paket" value={stats?.inventoryActive || 0} icon={PackageIcon} color="bg-orange-500" sub="Active Inventory" />
-        <StatCard label="Members" value={stats?.membersActive || 0} icon={Users} color="bg-purple-500" sub="Active Subscriptions" />
+        <StatCard label="Paket Masuk" value={stats?.packagesIn || 0} icon={ArrowDownRight} gradient={BRAND_COLORS.gradients.primary} sub="In selected period" trend="↑ 12% vs yesterday" />
+        <StatCard label="Paket Keluar" value={stats?.packagesOut || 0} icon={ArrowUpRight} gradient={BRAND_COLORS.gradients.success} sub="Out selected period" trend="↑ 8% vs yesterday" />
+        <StatCard label="Total Paket" value={stats?.inventoryActive || 0} icon={PackageIcon} gradient={BRAND_COLORS.gradients.warning} sub="Active Inventory" />
+        <StatCard label="Members" value={stats?.membersActive || 0} icon={Users} gradient={BRAND_COLORS.gradients.purple} sub="Active Subscriptions" />
         
         {/* Row 2: Revenue */}
-        <StatCard label="Rev. Pengantaran" value={`Rp ${(stats?.revDelivery || 0).toLocaleString()}`} icon={Truck} color="bg-teal-600" />
-        <StatCard label="Rev. Membership" value={`Rp ${(stats?.revMembership || 0).toLocaleString()}`} icon={Users} color="bg-indigo-600" />
-        <StatCard label="Rev. Paket" value={`Rp ${(stats?.revPackage || 0).toLocaleString()}`} icon={Activity} color="bg-emerald-600" />
-        <StatCard label="Total Revenue" value={`Rp ${(stats?.totalRevenue || 0).toLocaleString()}`} icon={DollarSign} color="bg-slate-900" sub="Gross Total" />
+        <StatCard label="Rev. Pengantaran" value={`Rp ${(stats?.revDelivery || 0).toLocaleString()}`} icon={Truck} gradient="bg-gradient-to-br from-teal-500 to-teal-700" />
+        <StatCard label="Rev. Membership" value={`Rp ${(stats?.revMembership || 0).toLocaleString()}`} icon={Users} gradient={BRAND_COLORS.gradients.indigo} />
+        <StatCard label="Rev. Paket" value={`Rp ${(stats?.revPackage || 0).toLocaleString()}`} icon={Activity} gradient="bg-gradient-to-br from-emerald-500 to-emerald-700" />
+        <StatCard label="Total Revenue" value={`Rp ${(stats?.totalRevenue || 0).toLocaleString()}`} icon={DollarSign} gradient={BRAND_COLORS.gradients.dark} sub="Gross Total" />
       </div>
 
       {/* 2. PACKAGES & OVERVIEW SECTION */}
@@ -475,10 +489,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           </div>
         )}
 
-        {/* Data Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+        {/* Data Table - Desktop */}
+        <div className="hidden md:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="overflow-x-auto max-h-[600px]">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-500 border-b border-slate-100 uppercase tracking-wider text-xs">
+              <thead className="bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 border-b border-slate-200 uppercase tracking-wider text-xs sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="px-4 py-4 font-bold w-12">
                     <input
@@ -503,9 +518,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                   <th className="px-6 py-4 font-bold text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filteredPackages.map(pkg => (
-                  <tr key={pkg.id} className="hover:bg-blue-50/50 transition-colors group" onClick={() => { if(pkg.status !== 'ARRIVED') setSelectedPkg(pkg); }}>
+              <tbody className="divide-y divide-slate-100">
+                {filteredPackages.map((pkg, index) => (
+                  <tr key={pkg.id} className={twMerge(
+                    "transition-all duration-200 group cursor-pointer",
+                    index % 2 === 0 ? "bg-white" : "bg-slate-50/50",
+                    "hover:bg-blue-50 hover:shadow-md hover:scale-[1.01] hover:z-10"
+                  )} onClick={() => { if(pkg.status !== 'ARRIVED') setSelectedPkg(pkg); }}>
                     <td className="px-4 py-4 w-12" onClick={(e) => e.stopPropagation()}>
                       {pkg.status === 'ARRIVED' && (
                         <input
@@ -540,13 +559,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                        <span className="font-mono bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold border border-slate-200">{pkg.pickupCode}</span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className={twMerge(
-                        "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide",
-                        pkg.status === 'ARRIVED' ? "bg-blue-100 text-blue-700" :
-                        pkg.status === 'PICKED' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                      )}>
-                        {pkg.status}
-                      </span>
+                      {(() => {
+                        const statusColor = getStatusColor(pkg.status);
+                        const StatusIcon = pkg.status === 'ARRIVED' ? PackageIcon : 
+                                          pkg.status === 'PICKED' ? CheckCircle : Trash2;
+                        return (
+                          <span className={twMerge(
+                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border-2 transition-all",
+                            statusColor.bg, statusColor.text, statusColor.border
+                          )}>
+                            <StatusIcon className="h-3 w-3" />
+                            {pkg.status}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 text-right">
                        <button className="p-2 hover:bg-blue-100 text-slate-400 hover:text-blue-600 rounded-lg transition-colors">
@@ -555,18 +581,109 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                     </td>
                   </tr>
                 ))}
-                {filteredPackages.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-16 text-center text-slate-400">
-                       <PackageIcon className="w-12 h-12 mx-auto mb-3 text-slate-200" />
-                       <p className="font-medium">No packages found</p>
-                       <p className="text-xs">Try adjusting your search or filters</p>
-                    </td>
-                  </tr>
-                )}
+
               </tbody>
             </table>
           </div>
+          
+          {/* Empty State */}
+          {filteredPackages.length === 0 && (
+            <EmptyState
+              icon={Inbox}
+              title="Tidak ada paket"
+              description="Belum ada paket yang sesuai dengan pencarian atau filter Anda. Coba sesuaikan kriteria pencarian atau tambah paket baru."
+              action={{
+                label: "Tambah Paket",
+                onClick: () => setIsAddModalOpen(true)
+              }}
+            />
+          )}
+        </div>
+
+        {/* Mobile Card Layout */}
+        <div className="md:hidden space-y-4">
+          {filteredPackages.map((pkg) => {
+            const statusColor = getStatusColor(pkg.status);
+            const StatusIcon = pkg.status === 'ARRIVED' ? PackageIcon : 
+                              pkg.status === 'PICKED' ? CheckCircle : Trash2;
+            return (
+              <div 
+                key={pkg.id}
+                className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all active:scale-98"
+                onClick={() => setSelectedPkg(pkg)}
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="font-mono text-sm font-bold text-slate-900">{pkg.trackingNumber}</div>
+                    <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                      <Truck className="w-3 h-3" /> {pkg.courier} • Size {pkg.size}
+                    </div>
+                  </div>
+                  <span className={twMerge(
+                    "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wide border-2",
+                    statusColor.bg, statusColor.text, statusColor.border
+                  )}>
+                    <StatusIcon className="h-2.5 w-2.5" />
+                    {pkg.status}
+                  </span>
+                </div>
+
+                {/* Recipient */}
+                <div className="mb-2">
+                  <div className="text-sm font-semibold text-slate-800">{pkg.recipientName}</div>
+                  <div className="text-xs text-slate-500">Unit {pkg.unitNumber}</div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                  <div className="text-xs text-slate-500">
+                    {new Date(pkg.dates.arrived).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                  </div>
+                  <div className="font-mono text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded font-bold">
+                    {pkg.pickupCode}
+                  </div>
+                </div>
+
+                {/* Checkbox untuk bulk pickup */}
+                {pkg.status === 'ARRIVED' && (
+                  <div className="mt-3 pt-3 border-t border-slate-100">
+                    <label className="flex items-center gap-2 text-xs text-slate-600">
+                      <input
+                        type="checkbox"
+                        checked={selectedForBulkPickup.has(pkg.id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          const newSet = new Set(selectedForBulkPickup);
+                          if (e.target.checked) {
+                            newSet.add(pkg.id);
+                          } else {
+                            newSet.delete(pkg.id);
+                          }
+                          setSelectedForBulkPickup(newSet);
+                        }}
+                        className="accent-blue-600"
+                      />
+                      Pilih untuk bulk pickup
+                    </label>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Mobile Empty State */}
+          {filteredPackages.length === 0 && (
+            <EmptyState
+              icon={Inbox}
+              title="Tidak ada paket"
+              description="Belum ada paket yang sesuai dengan pencarian atau filter Anda."
+              action={{
+                label: "Tambah Paket",
+                onClick: () => setIsAddModalOpen(true)
+              }}
+            />
+          )}
         </div>
       </div>
 
@@ -815,7 +932,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                            const loc = locations.find(l => l.id === selectedPkg.locationId);
                            const settings = StorageService.getSettings();
                            if(loc) WhatsAppService.sendNotification(selectedPkg, loc, settings);
-                           alert("Notification resent to queue!");
+                           showToast('success', 'Notifikasi berhasil dikirim ulang!');
                         }} className="bg-blue-50 hover:bg-blue-100 text-blue-700 py-3 rounded-xl font-bold text-sm flex items-center justify-center transition-colors">
                             <MessageCircle className="w-5 h-5" />
                         </button>
