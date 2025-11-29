@@ -16,7 +16,8 @@ type View = 'DASHBOARD' | 'LOCATIONS' | 'USERS' | 'CUSTOMERS' | 'SETTINGS' | 'RE
 const AdminApp: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [currentView, setCurrentView] = useState<View>('DASHBOARD');
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isDesktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const { t, language, setLanguage } = useApp();
 
   useEffect(() => {
@@ -47,7 +48,7 @@ const AdminApp: React.FC = () => {
     <button
       onClick={() => {
         setCurrentView(view);
-        setSidebarOpen(false); // Close sidebar on navigation
+        setMobileSidebarOpen(false); // Close sidebar on navigation (mobile only)
       }}
       className={twMerge(
         "flex items-center justify-between w-full px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg mb-1 group",
@@ -88,24 +89,28 @@ const AdminApp: React.FC = () => {
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
       {/* Sidebar Overlay - for mobile */}
-      {isSidebarOpen && (
+      {isMobileSidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/60 z-30 md:hidden" 
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => setMobileSidebarOpen(false)}
         ></div>
       )}
 
       {/* Sidebar */}
       <aside className={twMerge(
-        "w-64 bg-white border-r border-slate-200 flex-col z-40 transform transition-transform duration-300 ease-in-out md:flex md:translate-x-0 shadow-lg",
-        isSidebarOpen ? "translate-x-0 fixed h-full" : "-translate-x-full absolute"
+        "fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 flex-col transition-transform duration-300 ease-in-out flex shadow-lg",
+        // Mobile behavior
+        isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full",
+        // Desktop behavior (override mobile)
+        "md:translate-x-0 md:relative md:shadow-none",
+        !isDesktopSidebarOpen && "md:hidden"
       )}>
         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">P</div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">Pickpoint</h1>
           </div>
-          <button className="md:hidden text-slate-500" onClick={() => setSidebarOpen(false)}>
+          <button className="md:hidden text-slate-500" onClick={() => setMobileSidebarOpen(false)}>
             <X className="w-6 h-6"/>
           </button>
         </div>
@@ -131,20 +136,22 @@ const AdminApp: React.FC = () => {
               <button
                 onClick={() => setLanguage('id')}
                 className={twMerge(
-                  "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium border transition-all",
-                  language === 'id' ? "bg-blue-600 text-white border-blue-600 shadow" : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                  "w-10 h-10 rounded-full flex items-center justify-center text-lg border transition-all",
+                  language === 'id' ? "bg-blue-50 border-blue-500 shadow-sm scale-110" : "bg-white border-slate-200 hover:bg-slate-50 grayscale hover:grayscale-0"
                 )}
+                title="Bahasa Indonesia"
               >
-                <span className="text-lg">🇮🇩</span> ID
+                🇮🇩
               </button>
               <button
                 onClick={() => setLanguage('en')}
                 className={twMerge(
-                  "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium border transition-all",
-                  language === 'en' ? "bg-blue-600 text-white border-blue-600 shadow" : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                  "w-10 h-10 rounded-full flex items-center justify-center text-lg border transition-all",
+                  language === 'en' ? "bg-blue-50 border-blue-500 shadow-sm scale-110" : "bg-white border-slate-200 hover:bg-slate-50 grayscale hover:grayscale-0"
                 )}
+                title="English"
               >
-                <span className="text-lg">🇬🇧</span> EN
+                🇬🇧
               </button>
             </div>
           </div>
@@ -167,10 +174,20 @@ const AdminApp: React.FC = () => {
         </div>
       </aside>
 
-      <main className={`flex-1 overflow-auto relative ${isSidebarOpen ? 'bg-black/10' : ''}`}>
+      <main className={`flex-1 overflow-auto relative ${isMobileSidebarOpen ? 'bg-black/10' : ''}`}>
         <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 md:px-8 py-4 flex justify-between items-center shadow-md">
           <div className="flex items-center gap-4">
-            <button className="md:hidden text-slate-600" onClick={() => setSidebarOpen(true)}>
+            <button 
+              className="text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors" 
+              onClick={() => {
+                // Toggle based on screen size logic (simplified check)
+                if (window.innerWidth >= 768) {
+                  setDesktopSidebarOpen(!isDesktopSidebarOpen);
+                } else {
+                  setMobileSidebarOpen(true);
+                }
+              }}
+            >
                 <Menu className="w-6 h-6"/>
             </button>
             <h2 className="text-xl font-bold text-slate-800 capitalize">
