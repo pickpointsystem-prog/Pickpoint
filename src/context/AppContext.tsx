@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, ReactNode, useState } from 'react';
 
 type Language = 'id' | 'en';
 
@@ -188,27 +188,32 @@ const translations: Translations = {
 interface AppContextType {
   language: Language;
   t: (key: string) => string;
+  setLanguage: (lang: Language) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const language = 'en';
+  const [language, setLanguageState] = useState<Language>(() => {
+    const stored = localStorage.getItem('pp_language');
+    return stored === 'id' || stored === 'en' ? stored : 'en';
+  });
 
   useEffect(() => {
-    // One-time cleanup of theme settings
+    // One-time cleanup of legacy theme setting
     document.documentElement.classList.remove('dark');
     localStorage.removeItem('pp_theme');
-    // Set language to english and remove old setting
-    localStorage.setItem('pp_language', 'en');
   }, []);
 
-  const t = (key: string): string => {
-    return translations[language]?.[key] || key;
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem('pp_language', lang);
   };
 
+  const t = (key: string): string => translations[language]?.[key] || key;
+
   return (
-    <AppContext.Provider value={{ language, t }}>
+    <AppContext.Provider value={{ language, t, setLanguage }}>
       {children}
     </AppContext.Provider>
   );

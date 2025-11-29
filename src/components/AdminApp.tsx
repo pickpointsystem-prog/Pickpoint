@@ -17,7 +17,7 @@ const AdminApp: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [currentView, setCurrentView] = useState<View>('DASHBOARD');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const { t } = useApp();
+  const { t, language, setLanguage } = useApp();
 
   useEffect(() => {
     const sessionUser = sessionStorage.getItem('pp_session');
@@ -124,6 +124,30 @@ const AdminApp: React.FC = () => {
               <NavItem view="SETTINGS" icon={SettingsIcon} label="Settings" translationKey="settings.title" />
             </>
           )}
+          {/* Language Selector */}
+          <div className="mt-6 px-2">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">{t('settings.language')}</div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setLanguage('id')}
+                className={twMerge(
+                  "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium border transition-all",
+                  language === 'id' ? "bg-blue-600 text-white border-blue-600 shadow" : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                )}
+              >
+                <span className="text-lg">🇮🇩</span> ID
+              </button>
+              <button
+                onClick={() => setLanguage('en')}
+                className={twMerge(
+                  "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium border transition-all",
+                  language === 'en' ? "bg-blue-600 text-white border-blue-600 shadow" : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                )}
+              >
+                <span className="text-lg">🇬🇧</span> EN
+              </button>
+            </div>
+          </div>
         </nav>
 
         <div className="p-4 border-t border-slate-100 bg-slate-50">
