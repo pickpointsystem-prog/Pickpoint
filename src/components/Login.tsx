@@ -19,6 +19,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const found = users.find(u => u.username === username && u.password === password);
     
     if (found) {
+      StorageService.addActivity({
+        id: `act_${Date.now()}`,
+        type: 'LOGIN',
+        description: 'User logged in',
+        timestamp: new Date().toISOString(),
+        userId: found.id,
+        userName: found.name
+      });
       onLogin(found);
     } else {
       setError('Invalid credentials');

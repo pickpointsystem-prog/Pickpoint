@@ -1,4 +1,4 @@
-import { User, Location, Package, Customer, AppSettings } from '../types';
+import { User, Location, Package, Customer, AppSettings, ActivityLog } from '../types';
 import { INITIAL_USERS, INITIAL_LOCATIONS, INITIAL_SETTINGS, SEED_KEYS, INITIAL_CUSTOMERS } from '../constants';
 import config from '../config/environment';
 
@@ -130,4 +130,14 @@ export const StorageService = {
     return { ...INITIAL_SETTINGS, ...saved };
   },
   saveSettings: (s: AppSettings) => set(SEED_KEYS.SETTINGS, s),
+
+  // Activities
+  getActivities: (): ActivityLog[] => get(SEED_KEYS.ACTIVITIES, []),
+  addActivity: (activity: ActivityLog) => {
+    const logs = get<ActivityLog[]>(SEED_KEYS.ACTIVITIES, []);
+    logs.unshift(activity); // Add to top
+    // Keep only last 1000 activities
+    if (logs.length > 1000) logs.length = 1000;
+    set(SEED_KEYS.ACTIVITIES, logs);
+  },
 };

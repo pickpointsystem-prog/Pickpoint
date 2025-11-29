@@ -81,5 +81,6 @@ export const SEED_KEYS = {
   LOCATIONS: 'pp_locations',
   PACKAGES: 'pp_packages',
   CUSTOMERS: 'pp_customers',
-  SETTINGS: 'pp_settings'
+  SETTINGS: 'pp_settings',
+  ACTIVITIES: 'pp_activities'
 };

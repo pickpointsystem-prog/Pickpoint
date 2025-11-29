@@ -13,6 +13,7 @@ import {
   QrCode, X, Truck, CheckCircle, MessageCircle, Trash2, Camera, Lock, TrendingUp, Inbox
 } from 'lucide-react';
 import EmptyState from './EmptyState';
+import ActivityFeed from './ActivityFeed';
 import { twMerge } from 'tailwind-merge';
 
 // Helper: Export CSV
@@ -256,6 +257,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     };
 
     StorageService.savePackage(newPkg);
+    StorageService.addActivity({
+      id: `act_${Date.now()}`,
+      type: 'PACKAGE_ADD',
+      description: `Package ${newPkg.trackingNumber} received`,
+      timestamp: new Date().toISOString(),
+      userId: user.id,
+      userName: user.name,
+      relatedId: newPkg.id
+    });
     
     // Check if new customer needed
     const existingCust = customers.find(c => c.phoneNumber === formData.recipientPhone);
@@ -300,6 +310,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           feePaid: fee
         };
         StorageService.savePackage(updated);
+        StorageService.addActivity({
+          id: `act_${Date.now()}`,
+          type: 'PACKAGE_PICKUP',
+          description: `Package ${pkg.trackingNumber} picked up`,
+          timestamp: new Date().toISOString(),
+          userId: user.id,
+          userName: user.name,
+          relatedId: pkg.id
+        });
         setSelectedPkg(null);
         showToast('success', `Paket berhasil dipickup! Biaya: Rp ${fee.toLocaleString()}`);
         loadData();
@@ -338,6 +357,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           feePaid: fee
         };
         StorageService.savePackage(updated);
+        StorageService.addActivity({
+          id: `act_${Date.now()}_${pkg.id}`,
+          type: 'PACKAGE_PICKUP',
+          description: `Package ${pkg.trackingNumber} picked up (Bulk)`,
+          timestamp: new Date().toISOString(),
+          userId: user.id,
+          userName: user.name,
+          relatedId: pkg.id
+        });
       });
 
       setSelectedForBulkPickup(new Set());
@@ -354,6 +382,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         dates: { ...pkg.dates, destroyed: new Date().toISOString() },
       };
       StorageService.savePackage(updated);
+      StorageService.addActivity({
+        id: `act_${Date.now()}`,
+        type: 'PACKAGE_UPDATE',
+        description: `Package ${pkg.trackingNumber} marked as destroyed`,
+        timestamp: new Date().toISOString(),
+        userId: user.id,
+        userName: user.name,
+        relatedId: pkg.id
+      });
       setSelectedPkg(null);
       loadData();
       showToast('success', 'Paket telah ditandai sebagai DESTROYED');
@@ -435,7 +472,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       </div>
 
       {/* 2. PACKAGES & OVERVIEW SECTION */}
-      <div className="space-y-4 pt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 pt-4">
+        <div className="lg:col-span-3 space-y-4">
         {/* Control Bar */}
         <div className="flex flex-col lg:flex-row justify-between items-center gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
            {/* Search */}
@@ -686,6 +724,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           )}
         </div>
       </div>
+      
+      <div className="lg:col-span-1 h-full">
+         <ActivityFeed />
+      </div>
+    </div>
 
       {/* --- MODALS --- */}
       
