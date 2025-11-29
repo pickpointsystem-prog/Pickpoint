@@ -13,7 +13,6 @@ import {
   QrCode, X, Truck, CheckCircle, MessageCircle, Trash2, Camera, Lock, TrendingUp, Inbox
 } from 'lucide-react';
 import EmptyState from './EmptyState';
-import ActivityFeed from './ActivityFeed';
 import { twMerge } from 'tailwind-merge';
 
 // Helper: Export CSV
@@ -472,8 +471,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       </div>
 
       {/* 2. PACKAGES & OVERVIEW SECTION */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 pt-4">
-        <div className="lg:col-span-3 space-y-4">
+      <div className="space-y-4 pt-4">
         {/* Control Bar */}
         <div className="flex flex-col lg:flex-row justify-between items-center gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
            {/* Search */}
@@ -724,11 +722,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           )}
         </div>
       </div>
-      
-      <div className="lg:col-span-1 h-full">
-         <ActivityFeed />
-      </div>
-    </div>
 
       {/* --- MODALS --- */}
       
