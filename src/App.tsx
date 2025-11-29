@@ -1,17 +1,15 @@
 import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AdminApp from './components/AdminApp';
-import { StorageService } from './services/storage';
 import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
+import Landing from './components/Landing';
+import Tracking from './components/Tracking';
+import SelfRegistration from './components/SelfRegistration';
 import config, { logConfig } from './config/environment';
 
-// Initialize environment and log configuration
 logConfig();
 
-// Initialize Data Seeding
-StorageService.init();
-
-// Display environment banner
 if (config.enableDebugMode) {
   console.log(
     `%c🚀 Pickpoint Dashboard %c${config.env.toUpperCase()}`,
@@ -22,11 +20,19 @@ if (config.enableDebugMode) {
 
 const App: React.FC = () => {
   return (
-    <AppProvider>
-      <ToastProvider>
-        <AdminApp />
-      </ToastProvider>
-    </AppProvider>
+    <BrowserRouter>
+      <AppProvider>
+        <ToastProvider>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/tracking" element={<Tracking />} />
+            <Route path="/form" element={<SelfRegistration />} />
+            <Route path="/admin/*" element={<AdminApp />} />
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          </Routes>
+        </ToastProvider>
+      </AppProvider>
+    </BrowserRouter>
   );
 };
 

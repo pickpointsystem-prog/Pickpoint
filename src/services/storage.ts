@@ -1,6 +1,7 @@
 import { User, Location, Package, Customer, AppSettings, ActivityLog } from '../types';
 import { INITIAL_USERS, INITIAL_LOCATIONS, INITIAL_SETTINGS, SEED_KEYS, INITIAL_CUSTOMERS } from '../constants';
 import config from '../config/environment';
+import { SupabaseService } from './supabase';
 
 // Add environment prefix to storage keys
 const prefixKey = (key: string): string => `${config.storagePrefix}${key}`;
@@ -25,6 +26,13 @@ function set(key: string, value: any) {
     console.log(`💾 Storage [${config.env}]:`, { key: prefixedKey, itemCount: Array.isArray(value) ? value.length : 1 });
   }
 }
+
+type SupabaseTableKey = 'users' | 'locations' | 'packages' | 'customers' | 'settings' | 'activities';
+
+const syncToSupabase = <T>(table: SupabaseTableKey, payload: T[]) => {
+  if (!SupabaseService.isReady() || payload.length === 0) return;
+  SupabaseService.upsertTable(table, payload);
+};
 
 export const StorageService = {
   init: () => {
@@ -55,6 +63,21 @@ export const StorageService = {
     ensure(SEED_KEYS.SETTINGS, INITIAL_SETTINGS);
     ensure(SEED_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
     ensure(SEED_KEYS.PACKAGES, []);
+    ensure(SEED_KEYS.ACTIVITIES, []);
+
+    const seedFromSupabase = async () => {
+      if (!SupabaseService.isReady()) return;
+      const remote = await SupabaseService.fetchAllData();
+      if (!remote) return;
+      if (remote.users.length) set(SEED_KEYS.USERS, remote.users);
+      if (remote.locations.length) set(SEED_KEYS.LOCATIONS, remote.locations);
+      if (remote.packages.length) set(SEED_KEYS.PACKAGES, remote.packages);
+      if (remote.customers.length) set(SEED_KEYS.CUSTOMERS, remote.customers);
+      if (remote.activities.length) set(SEED_KEYS.ACTIVITIES, remote.activities);
+      if (remote.settings) set(SEED_KEYS.SETTINGS, { ...INITIAL_SETTINGS, ...remote.settings });
+    };
+
+    seedFromSupabase();
   },
 
   // Users
@@ -78,10 +101,13 @@ export const StorageService = {
     if (idx >= 0) users[idx] = user;
     else users.push(user);
     set(SEED_KEYS.USERS, users);
+    syncToSupabase('users', users);
   },
   deleteUser: (id: string) => {
     const users = get<User[]>(SEED_KEYS.USERS, []);
-    set(SEED_KEYS.USERS, users.filter(u => u.id !== id));
+    const filtered = users.filter(u => u.id !== id);
+    set(SEED_KEYS.USERS, filtered);
+    syncToSupabase('users', filtered);
   },
 
   // Locations
@@ -93,10 +119,13 @@ export const StorageService = {
     if (idx >= 0) locs[idx] = loc;
     else locs.push(loc);
     set(SEED_KEYS.LOCATIONS, locs);
+    syncToSupabase('locations', locs);
   },
   deleteLocation: (id: string) => {
     const locs = get<Location[]>(SEED_KEYS.LOCATIONS, []);
-    set(SEED_KEYS.LOCATIONS, locs.filter(l => l.id !== id));
+    const filtered = locs.filter(l => l.id !== id);
+    set(SEED_KEYS.LOCATIONS, filtered);
+    syncToSupabase('locations', filtered);
   },
 
   // Packages
@@ -107,6 +136,7 @@ export const StorageService = {
     if (idx >= 0) pkgs[idx] = pkg;
     else pkgs.push(pkg);
     set(SEED_KEYS.PACKAGES, pkgs);
+    syncToSupabase('packages', pkgs);
   },
 
   // Customers
@@ -117,10 +147,13 @@ export const StorageService = {
     if (idx >= 0) custs[idx] = cust;
     else custs.push(cust);
     set(SEED_KEYS.CUSTOMERS, custs);
+    syncToSupabase('customers', custs);
   },
   deleteCustomer: (id: string) => {
     const custs = get<Customer[]>(SEED_KEYS.CUSTOMERS, []);
-    set(SEED_KEYS.CUSTOMERS, custs.filter(c => c.id !== id));
+    const filtered = custs.filter(c => c.id !== id);
+    set(SEED_KEYS.CUSTOMERS, filtered);
+    syncToSupabase('customers', filtered);
   },
 
   // Settings with Self-Healing/Migration for new keys
@@ -129,7 +162,10 @@ export const StorageService = {
     // Merge with INITIAL_SETTINGS to ensure new keys (like templates) exist if user has old data
     return { ...INITIAL_SETTINGS, ...saved };
   },
-  saveSettings: (s: AppSettings) => set(SEED_KEYS.SETTINGS, s),
+  saveSettings: (s: AppSettings) => {
+    set(SEED_KEYS.SETTINGS, s);
+    syncToSupabase('settings', [s]);
+  },
 
   // Activities
   getActivities: (): ActivityLog[] => get(SEED_KEYS.ACTIVITIES, []),
@@ -139,5 +175,5 @@ export const StorageService = {
     // Keep only last 1000 activities
     if (logs.length > 1000) logs.length = 1000;
     set(SEED_KEYS.ACTIVITIES, logs);
+    SupabaseService.insertActivity(activity);
   },
-};

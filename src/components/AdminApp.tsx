@@ -17,7 +17,12 @@ const AdminApp: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [currentView, setCurrentView] = useState<View>('DASHBOARD');
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [isDesktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [isDesktopSidebarOpen, setDesktopSidebarOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('ui_isDesktopSidebarOpen');
+      return saved === null ? true : saved === 'true';
+    } catch { return true; }
+  });
   const { t, language, setLanguage } = useApp();
 
   useEffect(() => {
@@ -182,7 +187,9 @@ const AdminApp: React.FC = () => {
               onClick={() => {
                 // Toggle based on screen size logic (simplified check)
                 if (window.innerWidth >= 768) {
-                  setDesktopSidebarOpen(!isDesktopSidebarOpen);
+                  const next = !isDesktopSidebarOpen;
+                  setDesktopSidebarOpen(next);
+                  try { localStorage.setItem('ui_isDesktopSidebarOpen', String(next)); } catch {}
                 } else {
                   setMobileSidebarOpen(true);
                 }

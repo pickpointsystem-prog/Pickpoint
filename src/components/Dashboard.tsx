@@ -74,7 +74,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   // --- STATE: DASHBOARD & PACKAGES ---
   const [filter, setFilter] = useState<'DAY' | 'WEEK' | 'MONTH' | 'ALL'>('DAY');
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [isStatsExpanded, setIsStatsExpanded] = useState(true);
+  const [isStatsExpanded, setIsStatsExpanded] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('ui_isStatsExpanded');
+      return saved === null ? true : saved === 'true';
+    } catch { return true; }
+  });
+  const [pageSize, setPageSize] = useState(25);
+  const [currentPage, setCurrentPage] = useState(1);
   
   // Package Management State
   const [packages, setPackages] = useState<Package[]>([]);
@@ -181,8 +188,28 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     });
     
     // Sort: Latest first
-    return res.sort((a,b) => new Date(b.dates.arrived).getTime() - new Date(a.dates.arrived).getTime());
-  }, [packages, search, user]);
+      return res.sort((a,b) => new Date(b.dates.arrived).getTime() - new Date(a.dates.arrived).getTime());
+    }, [packages, search, user]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredPackages.length / pageSize));
+
+    useEffect(() => {
+      if (currentPage > totalPages) {
+        setCurrentPage(totalPages);
+      }
+    }, [currentPage, totalPages]);
+
+    useEffect(() => {
+      setCurrentPage(1);
+    }, [filteredPackages.length, pageSize]);
+
+    const paginatedPackages = useMemo(() => {
+      const start = (currentPage - 1) * pageSize;
+      return filteredPackages.slice(start, start + pageSize);
+    }, [filteredPackages, currentPage, pageSize]);
+
+    const rangeStart = filteredPackages.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+    const rangeEnd = Math.min(filteredPackages.length, currentPage * pageSize);
 
   // --- HANDLERS ---
   const handleNameInput = (val: string) => {
@@ -442,7 +469,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       {/* Toggle Stats Button */}
       <div className="flex justify-end">
         <button 
-            onClick={() => setIsStatsExpanded(!isStatsExpanded)}
+            onClick={() => {
+              const next = !isStatsExpanded;
+              setIsStatsExpanded(next);
+              try { localStorage.setItem('ui_isStatsExpanded', String(next)); } catch {}
+            }}
             className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm"
         >
             {isStatsExpanded ? (
@@ -528,6 +559,36 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
            </div>
         </div>
 
+        <div className="flex flex-col gap-3 px-0 py-2 text-xs text-slate-500 md:flex-row md:items-center md:justify-between">
+          <div>
+            Menampilkan {rangeStart} &ndash; {rangeEnd} dari {filteredPackages.length} paket
+          </div>
+          <div className="flex items-center gap-2">
+            <span>Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="text-xs rounded-md border border-slate-200 bg-white px-3 py-1 outline-none focus:border-blue-500"
+            >
+              {[25, 50, 100].map(size => (
+                <option key={size} value={size}>{size}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="rounded-lg border border-slate-200 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-50 hover:border-blue-500 hover:text-blue-600"
+            >Prev</button>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded-lg border border-slate-200 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-50 hover:border-blue-500 hover:text-blue-600"
+            >Next</button>
+          </div>
+        </div>
+
         {/* Bulk Pickup Bar */}
         {selectedForBulkPickup.size > 0 && (
           <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-2xl flex items-center gap-4 z-40">
@@ -551,8 +612,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
         {/* Data Table - Desktop */}
         <div className="hidden md:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="overflow-x-auto max-h-[600px]">
-            <table className="w-full text-left text-sm">
+          <div className="overflow-x-auto">
+            <div className="max-h-[520px] overflow-y-auto">
+              <table className="w-full text-left text-sm">
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 border-b border-slate-200 uppercase tracking-wider text-xs sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="px-4 py-4 font-bold w-12">
@@ -579,7 +641,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredPackages.map((pkg, index) => (
+                {paginatedPackages.map((pkg, index) => (
                   <tr key={pkg.id} className={twMerge(
                     "transition-all duration-200 group cursor-pointer",
                     index % 2 === 0 ? "bg-white" : "bg-slate-50/50",
@@ -643,7 +705,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 ))}
 
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
           
           {/* Empty State */}
@@ -662,7 +725,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
         {/* Mobile Card Layout */}
         <div className="md:hidden space-y-4">
-          {filteredPackages.map((pkg) => {
+          {paginatedPackages.map((pkg) => {
             const statusColor = getStatusColor(pkg.status);
             const StatusIcon = pkg.status === 'ARRIVED' ? PackageIcon : 
                               pkg.status === 'PICKED' ? CheckCircle : Trash2;
