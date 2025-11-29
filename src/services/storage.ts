@@ -28,16 +28,50 @@ function set(key: string, value: any) {
 
 export const StorageService = {
   init: () => {
-    if (!localStorage.getItem(SEED_KEYS.USERS)) set(SEED_KEYS.USERS, INITIAL_USERS);
-    if (!localStorage.getItem(SEED_KEYS.LOCATIONS)) set(SEED_KEYS.LOCATIONS, INITIAL_LOCATIONS);
-    if (!localStorage.getItem(SEED_KEYS.SETTINGS)) set(SEED_KEYS.SETTINGS, INITIAL_SETTINGS);
-    if (!localStorage.getItem(SEED_KEYS.CUSTOMERS)) set(SEED_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
-    // Packages start empty if not present, but we ensure the array exists
-    if (!localStorage.getItem(SEED_KEYS.PACKAGES)) set(SEED_KEYS.PACKAGES, []);
+    // Migration-aware seeding: ensure prefixed keys exist. If legacy (unprefixed) data exists, migrate it.
+    const ensure = (key: string, initialValue: any) => {
+      const legacy = localStorage.getItem(key); // old unprefixed
+      const prefixed = localStorage.getItem(prefixKey(key));
+      if (!prefixed) {
+        if (legacy) {
+          // Migrate legacy data into new prefixed key
+            try {
+              const parsed = JSON.parse(legacy);
+              set(key, parsed);
+              if (config.enableDebugMode) console.log(`🔄 Migrated legacy storage key '${key}' to '${prefixKey(key)}'`);
+            } catch {
+              set(key, initialValue);
+              if (config.enableDebugMode) console.log(`⚠️ Failed parsing legacy key '${key}', seeded initial value.`);
+            }
+        } else {
+          // Seed fresh
+          set(key, initialValue);
+        }
+      }
+    };
+
+    ensure(SEED_KEYS.USERS, INITIAL_USERS);
+    ensure(SEED_KEYS.LOCATIONS, INITIAL_LOCATIONS);
+    ensure(SEED_KEYS.SETTINGS, INITIAL_SETTINGS);
+    ensure(SEED_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
+    ensure(SEED_KEYS.PACKAGES, []);
   },
 
   // Users
-  getUsers: (): User[] => get(SEED_KEYS.USERS, []),
+  getUsers: (): User[] => {
+    const users = get<User[]>(SEED_KEYS.USERS, []);
+    if (users.length === 0) {
+      // Fallback: try legacy key if exists (helps if init not called yet)
+      try {
+        const legacy = localStorage.getItem(SEED_KEYS.USERS);
+        if (legacy) {
+          const parsed = JSON.parse(legacy);
+          if (Array.isArray(parsed) && parsed.length) return parsed;
+        }
+      } catch {}
+    }
+    return users;
+  },
   saveUser: (user: User) => {
     const users = get<User[]>(SEED_KEYS.USERS, []);
     const idx = users.findIndex(u => u.id === user.id);
