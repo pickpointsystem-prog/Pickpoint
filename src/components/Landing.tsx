@@ -1,9 +1,6 @@
 
 import React from 'react';
-import { twMerge } from 'tailwind-merge';
-import { Link } from 'react-router-dom';
-import { ShieldCheck, Zap, Users, BarChart3, CheckCircle2, Package as PackageIcon } from 'lucide-react';
-import { StorageService } from '../services/storage';
+import { ShieldCheck, Zap, Users, BarChart3, Package as PackageIcon } from 'lucide-react';
 
 const Landing: React.FC = () => {
   return (
