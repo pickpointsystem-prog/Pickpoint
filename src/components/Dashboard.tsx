@@ -1,21 +1,5 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { User, Package, DashboardStats, PackageSize, Customer, Location } from '../types';
-import { StorageService } from '../services/storage';
-import { PricingService } from '../services/pricing';
-import { WhatsAppService } from '../services/whatsapp';
-import { COURIER_OPTIONS } from '../constants';
-import { BRAND_COLORS, getStatusColor } from '../constants/colors';
-import { useToast } from '../context/ToastContext';
-import BarcodeScanner from './BarcodeScanner';
-import { 
-  Package as PackageIcon, DollarSign, Users, Activity, 
-  ArrowUpRight, ArrowDownRight, Search, Plus, 
-  QrCode, X, Truck, CheckCircle, MessageCircle, Trash2, Camera, Lock, TrendingUp, Inbox,
-  ChevronUp, ChevronDown
-} from 'lucide-react';
-import EmptyState from './EmptyState';
-import { twMerge } from 'tailwind-merge';
 
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 // Helper: Export CSV
 function exportPackagesToCSV(packages: Package[]) {
   const headers = [
@@ -63,32 +47,32 @@ function exportPackagesToCSV(packages: Package[]) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+import { User, Package, DashboardStats, PackageSize, Customer, Location } from '../types';
+import { StorageService } from '../services/storage';
+import { PricingService } from '../services/pricing';
+import { WhatsAppService } from '../services/whatsapp';
+import { COURIER_OPTIONS } from '../constants';
+import { 
+  Package as PackageIcon, DollarSign, Users, Activity, 
+  ArrowUpRight, ArrowDownRight, Search, Plus, 
+  QrCode, X, Truck, CheckCircle, MessageCircle, Trash2, Camera, Lock
+} from 'lucide-react';
+import { twMerge } from 'tailwind-merge';
 
 interface DashboardProps {
   user: User;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ user }) => {
-  const { showToast, showConfirm } = useToast();
-  
   // --- STATE: DASHBOARD & PACKAGES ---
   const [filter, setFilter] = useState<'DAY' | 'WEEK' | 'MONTH' | 'ALL'>('DAY');
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [isStatsExpanded, setIsStatsExpanded] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('ui_isStatsExpanded');
-      return saved === null ? true : saved === 'true';
-    } catch { return true; }
-  });
-  const [pageSize, setPageSize] = useState(25);
-  const [currentPage, setCurrentPage] = useState(1);
   
   // Package Management State
   const [packages, setPackages] = useState<Package[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [search, setSearch] = useState('');
-  const [selectedForBulkPickup, setSelectedForBulkPickup] = useState<Set<string>>(new Set()); // Multi-select
   
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -110,7 +94,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [isAutoFilled, setIsAutoFilled] = useState(false); // State to lock fields
-  const [isScannerOpen, setIsScannerOpen] = useState(false); // Scanner modal
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -188,28 +171,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     });
     
     // Sort: Latest first
-      return res.sort((a,b) => new Date(b.dates.arrived).getTime() - new Date(a.dates.arrived).getTime());
-    }, [packages, search, user]);
-
-    const totalPages = Math.max(1, Math.ceil(filteredPackages.length / pageSize));
-
-    useEffect(() => {
-      if (currentPage > totalPages) {
-        setCurrentPage(totalPages);
-      }
-    }, [currentPage, totalPages]);
-
-    useEffect(() => {
-      setCurrentPage(1);
-    }, [filteredPackages.length, pageSize]);
-
-    const paginatedPackages = useMemo(() => {
-      const start = (currentPage - 1) * pageSize;
-      return filteredPackages.slice(start, start + pageSize);
-    }, [filteredPackages, currentPage, pageSize]);
-
-    const rangeStart = filteredPackages.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-    const rangeEnd = Math.min(filteredPackages.length, currentPage * pageSize);
+    return res.sort((a,b) => new Date(b.dates.arrived).getTime() - new Date(a.dates.arrived).getTime());
+  }, [packages, search, user]);
 
   // --- HANDLERS ---
   const handleNameInput = (val: string) => {
@@ -255,18 +218,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.locationId) return showToast('warning', 'Pilih lokasi terlebih dahulu');
+    if (!formData.locationId) return alert("Select Location");
 
-    // Generate 6-character alphanumeric code (uppercase)
-    const generatePickupCode = (): string => {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let code = '';
-      for (let i = 0; i < 6; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return code;
-    };
-    const pickupCode = generatePickupCode();
+    const pickupCode = Math.floor(1000 + Math.random() * 9000).toString();
     const newPkg: Package = {
       id: `pkg_${Date.now()}`,
       trackingNumber: formData.tracking,
@@ -285,15 +239,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     };
 
     StorageService.savePackage(newPkg);
-    StorageService.addActivity({
-      id: `act_${Date.now()}`,
-      type: 'PACKAGE_ADD',
-      description: `Package ${newPkg.trackingNumber} received`,
-      timestamp: new Date().toISOString(),
-      userId: user.id,
-      userName: user.name,
-      relatedId: newPkg.id
-    });
     
     // Check if new customer needed
     const existingCust = customers.find(c => c.phoneNumber === formData.recipientPhone);
@@ -328,101 +273,30 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
     const fee = PricingService.calculateFee(pkg, loc, cust);
     
-    showConfirm(
-      `Confirm Pickup?\nBiaya yang harus dibayar: Rp ${fee.toLocaleString()}`,
-      () => {
-        const updated: Package = {
-          ...pkg,
-          status: 'PICKED',
-          dates: { ...pkg.dates, picked: new Date().toISOString() },
-          feePaid: fee
-        };
-        StorageService.savePackage(updated);
-        StorageService.addActivity({
-          id: `act_${Date.now()}`,
-          type: 'PACKAGE_PICKUP',
-          description: `Package ${pkg.trackingNumber} picked up`,
-          timestamp: new Date().toISOString(),
-          userId: user.id,
-          userName: user.name,
-          relatedId: pkg.id
-        });
-        setSelectedPkg(null);
-        showToast('success', `Paket berhasil dipickup! Biaya: Rp ${fee.toLocaleString()}`);
-        loadData();
-      }
-    );
-  };
-
-  const handleBulkPickup = () => {
-    if (selectedForBulkPickup.size === 0) {
-      showToast('warning', 'Pilih setidaknya 1 paket untuk diambil');
-      return;
-    }
-
-    const selectedPkgs = filteredPackages.filter(p => selectedForBulkPickup.has(p.id));
-    let totalFee = 0;
-
-    selectedPkgs.forEach(pkg => {
-      const loc = locations.find(l => l.id === pkg.locationId);
-      const cust = customers.find(c => c.phoneNumber === pkg.recipientPhone);
-      const fee = loc ? PricingService.calculateFee(pkg, loc, cust) : 0;
-      totalFee += fee;
-    });
-
-    const msg = `Konfirmasi pickup ${selectedPkgs.length} paket dengan total biaya Rp ${totalFee.toLocaleString()}?`;
-    
-    showConfirm(msg, () => {
-      selectedPkgs.forEach(pkg => {
-        const loc = locations.find(l => l.id === pkg.locationId);
-        const cust = customers.find(c => c.phoneNumber === pkg.recipientPhone);
-        const fee = loc ? PricingService.calculateFee(pkg, loc, cust) : 0;
-
-        const updated: Package = {
-          ...pkg,
-          status: 'PICKED',
-          dates: { ...pkg.dates, picked: new Date().toISOString() },
-          feePaid: fee
-        };
-        StorageService.savePackage(updated);
-        StorageService.addActivity({
-          id: `act_${Date.now()}_${pkg.id}`,
-          type: 'PACKAGE_PICKUP',
-          description: `Package ${pkg.trackingNumber} picked up (Bulk)`,
-          timestamp: new Date().toISOString(),
-          userId: user.id,
-          userName: user.name,
-          relatedId: pkg.id
-        });
-      });
-
-      setSelectedForBulkPickup(new Set());
+    if (confirm(`Confirm Pickup?\nFee to pay: Rp ${fee.toLocaleString()}`)) {
+      const updated: Package = {
+        ...pkg,
+        status: 'PICKED',
+        dates: { ...pkg.dates, picked: new Date().toISOString() },
+        feePaid: fee
+      };
+      StorageService.savePackage(updated);
+      setSelectedPkg(null);
       loadData();
-      showToast('success', `${selectedPkgs.length} paket berhasil diambil!`);
-    });
+    }
   };
 
   const handleDestroy = (pkg: Package) => {
-    showConfirm(`Mark paket ${pkg.trackingNumber} sebagai DESTROYED/LOST?`, () => {
+    if (confirm("Mark as DESTROYED/LOST?")) {
       const updated: Package = {
         ...pkg,
         status: 'DESTROYED',
         dates: { ...pkg.dates, destroyed: new Date().toISOString() },
       };
       StorageService.savePackage(updated);
-      StorageService.addActivity({
-        id: `act_${Date.now()}`,
-        type: 'PACKAGE_UPDATE',
-        description: `Package ${pkg.trackingNumber} marked as destroyed`,
-        timestamp: new Date().toISOString(),
-        userId: user.id,
-        userName: user.name,
-        relatedId: pkg.id
-      });
       setSelectedPkg(null);
       loadData();
-      showToast('success', 'Paket telah ditandai sebagai DESTROYED');
-    });
+    }
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -439,91 +313,59 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const getSelectedLocation = () => locations.find(l => l.id === formData.locationId);
 
   // --- UI COMPONENTS ---
-  const StatCard = ({ label, value, icon: Icon, gradient, sub, trend }: any) => (
-    <div className={`${gradient} p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer group relative overflow-hidden`}>
-      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform"></div>
-      <div className="relative z-10">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <p className="text-white/90 text-xs font-bold uppercase tracking-wider mb-2">{label}</p>
-            <h3 className="text-4xl font-black text-white">{value}</h3>
-            {trend && (
-              <div className="flex items-center gap-1 mt-2 text-white/90 text-xs font-semibold">
-                <TrendingUp className="w-3 h-3" />
-                <span>{trend}</span>
-              </div>
-            )}
-          </div>
-          <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl group-hover:bg-white/30 transition-colors">
-            <Icon className="w-7 h-7 text-white" />
-          </div>
-        </div>
-        {sub && <p className="text-white/80 text-xs font-medium">{sub}</p>}
+  const StatCard = ({ label, value, icon: Icon, color, sub }: any) => (
+    <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden">
+      <div className={`absolute top-0 right-0 p-4 opacity-10 ${color.replace('bg-', 'text-')}`}>
+        <Icon className="w-16 h-16 transform translate-x-4 -translate-y-4" />
       </div>
+      <div className="flex justify-between items-start z-10">
+        <div>
+          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{label}</p>
+          <h3 className="text-2xl font-bold text-slate-800">{value}</h3>
+        </div>
+        <div className={`p-2 rounded-lg ${color} bg-opacity-10 text-opacity-100`}>
+          <Icon className={`w-5 h-5 ${color.replace('bg-', 'text-')}`} />
+        </div>
+      </div>
+      {sub && <p className="text-[10px] text-slate-400 mt-3 font-medium z-10">{sub}</p>}
     </div>
   );
 
   return (
     <div className="space-y-6">
       
-      {/* Toggle Stats Button */}
-      <div className="flex justify-end">
-        <button 
-            onClick={() => {
-              const next = !isStatsExpanded;
-              setIsStatsExpanded(next);
-              try { localStorage.setItem('ui_isStatsExpanded', String(next)); } catch {}
-            }}
-            className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm"
-        >
-            {isStatsExpanded ? (
-                <>
-                    Hide Stats <ChevronUp size={14} />
-                </>
-            ) : (
-                <>
-                    Show Stats <ChevronDown size={14} />
-                </>
-            )}
-        </button>
+      {/* 0. FILTER BAR (TOP LEFT) */}
+      <div className="flex justify-between items-end">
+        <div className="flex items-center bg-white rounded-lg border border-slate-200 p-1 w-fit shadow-sm">
+           {(['DAY', 'WEEK', 'MONTH', 'ALL'] as const).map(f => (
+             <button 
+               key={f}
+               onClick={() => setFilter(f)}
+               className={twMerge(
+                 "px-4 py-1.5 text-xs font-bold rounded-md transition-all",
+                 filter === f ? "bg-slate-800 text-white shadow" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+               )}
+             >
+               {f}
+             </button>
+           ))}
+        </div>
       </div>
 
-      {isStatsExpanded && (
-        <div className="space-y-6 animate-in slide-in-from-top-4 duration-300 fade-in">
-          {/* 0. FILTER BAR (TOP LEFT) */}
-          <div className="flex justify-between items-end">
-            <div className="flex items-center bg-white rounded-lg border border-slate-200 p-1 w-fit shadow-sm">
-              {(['DAY', 'WEEK', 'MONTH', 'ALL'] as const).map(f => (
-                <button 
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={twMerge(
-                    "px-4 py-1.5 text-xs font-bold rounded-md transition-all",
-                    filter === f ? "bg-slate-800 text-white shadow" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                  )}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 1. KPI SECTION */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Row 1: Operations */}
-            <StatCard label="Paket Masuk" value={stats?.packagesIn || 0} icon={ArrowDownRight} gradient={BRAND_COLORS.gradients.primary} sub="In selected period" trend="↑ 12% vs yesterday" />
-            <StatCard label="Paket Keluar" value={stats?.packagesOut || 0} icon={ArrowUpRight} gradient={BRAND_COLORS.gradients.success} sub="Out selected period" trend="↑ 8% vs yesterday" />
-            <StatCard label="Total Paket" value={stats?.inventoryActive || 0} icon={PackageIcon} gradient={BRAND_COLORS.gradients.warning} sub="Active Inventory" />
-            <StatCard label="Members" value={stats?.membersActive || 0} icon={Users} gradient={BRAND_COLORS.gradients.purple} sub="Active Subscriptions" />
-            
-            {/* Row 2: Revenue */}
-            <StatCard label="Rev. Pengantaran" value={`Rp ${(stats?.revDelivery || 0).toLocaleString()}`} icon={Truck} gradient="bg-gradient-to-br from-teal-500 to-teal-700" />
-            <StatCard label="Rev. Membership" value={`Rp ${(stats?.revMembership || 0).toLocaleString()}`} icon={Users} gradient={BRAND_COLORS.gradients.indigo} />
-            <StatCard label="Rev. Paket" value={`Rp ${(stats?.revPackage || 0).toLocaleString()}`} icon={Activity} gradient="bg-gradient-to-br from-emerald-500 to-emerald-700" />
-            <StatCard label="Total Revenue" value={`Rp ${(stats?.totalRevenue || 0).toLocaleString()}`} icon={DollarSign} gradient={BRAND_COLORS.gradients.dark} sub="Gross Total" />
-          </div>
-        </div>
-      )}
+      {/* 1. KPI SECTION */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Row 1: Operations */}
+        <StatCard label="Paket Masuk" value={stats?.packagesIn || 0} icon={ArrowDownRight} color="bg-blue-500" sub="In selected period" />
+        <StatCard label="Paket Keluar" value={stats?.packagesOut || 0} icon={ArrowUpRight} color="bg-green-500" sub="Out selected period" />
+        <StatCard label="Total Paket" value={stats?.inventoryActive || 0} icon={PackageIcon} color="bg-orange-500" sub="Active Inventory" />
+        <StatCard label="Members" value={stats?.membersActive || 0} icon={Users} color="bg-purple-500" sub="Active Subscriptions" />
+        
+        {/* Row 2: Revenue */}
+        <StatCard label="Rev. Pengantaran" value={`Rp ${(stats?.revDelivery || 0).toLocaleString()}`} icon={Truck} color="bg-teal-600" />
+        <StatCard label="Rev. Membership" value={`Rp ${(stats?.revMembership || 0).toLocaleString()}`} icon={Users} color="bg-indigo-600" />
+        <StatCard label="Rev. Paket" value={`Rp ${(stats?.revPackage || 0).toLocaleString()}`} icon={Activity} color="bg-emerald-600" />
+        <StatCard label="Total Revenue" value={`Rp ${(stats?.totalRevenue || 0).toLocaleString()}`} icon={DollarSign} color="bg-slate-900" sub="Gross Total" />
+      </div>
 
       {/* 2. PACKAGES & OVERVIEW SECTION */}
       <div className="space-y-4 pt-4">
@@ -559,79 +401,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
            </div>
         </div>
 
-        <div className="flex flex-col gap-3 px-0 py-2 text-xs text-slate-500 md:flex-row md:items-center md:justify-between">
-          <div>
-            Menampilkan {rangeStart} &ndash; {rangeEnd} dari {filteredPackages.length} paket
-          </div>
-          <div className="flex items-center gap-2">
-            <span>Rows per page:</span>
-            <select
-              value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
-              className="text-xs rounded-md border border-slate-200 bg-white px-3 py-1 outline-none focus:border-blue-500"
-            >
-              {[25, 50, 100].map(size => (
-                <option key={size} value={size}>{size}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              className="rounded-lg border border-slate-200 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-50 hover:border-blue-500 hover:text-blue-600"
-            >Prev</button>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-              className="rounded-lg border border-slate-200 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-50 hover:border-blue-500 hover:text-blue-600"
-            >Next</button>
-          </div>
-        </div>
-
-        {/* Bulk Pickup Bar */}
-        {selectedForBulkPickup.size > 0 && (
-          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-2xl flex items-center gap-4 z-40">
-            <span className="font-bold">{selectedForBulkPickup.size} paket dipilih</span>
-            <div className="flex gap-2">
-              <button
-                onClick={handleBulkPickup}
-                className="bg-white text-blue-600 px-4 py-1.5 rounded font-bold text-sm hover:bg-blue-50 transition-colors"
-              >
-                Ambil Semua ({selectedForBulkPickup.size})
-              </button>
-              <button
-                onClick={() => setSelectedForBulkPickup(new Set())}
-                className="bg-blue-700 hover:bg-blue-800 px-3 py-1.5 rounded text-sm transition-colors"
-              >
-                Batal
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Data Table - Desktop */}
-        <div className="hidden md:block bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        {/* Data Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <div className="max-h-[520px] overflow-y-auto">
-              <table className="w-full text-left text-sm">
-              <thead className="bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 border-b border-slate-200 uppercase tracking-wider text-xs sticky top-0 z-10 shadow-sm">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 text-slate-500 border-b border-slate-100 uppercase tracking-wider text-xs">
                 <tr>
-                  <th className="px-4 py-4 font-bold w-12">
-                    <input
-                      type="checkbox"
-                      checked={selectedForBulkPickup.size === filteredPackages.filter(p => p.status === 'ARRIVED').length && filteredPackages.some(p => p.status === 'ARRIVED')}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          const arrivedIds = new Set(filteredPackages.filter(p => p.status === 'ARRIVED').map(p => p.id));
-                          setSelectedForBulkPickup(arrivedIds);
-                        } else {
-                          setSelectedForBulkPickup(new Set());
-                        }
-                      }}
-                      className="accent-blue-600"
-                    />
-                  </th>
                   <th className="px-6 py-4 font-bold">Package Info</th>
                   <th className="px-6 py-4 font-bold">Recipient</th>
                   <th className="px-6 py-4 font-bold">Date & Time</th>
@@ -640,32 +415,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                   <th className="px-6 py-4 font-bold text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {paginatedPackages.map((pkg, index) => (
-                  <tr key={pkg.id} className={twMerge(
-                    "transition-all duration-200 group cursor-pointer",
-                    index % 2 === 0 ? "bg-white" : "bg-slate-50/50",
-                    "hover:bg-blue-50 hover:shadow-md hover:scale-[1.01] hover:z-10"
-                  )} onClick={() => { if(pkg.status !== 'ARRIVED') setSelectedPkg(pkg); }}>
-                    <td className="px-4 py-4 w-12" onClick={(e) => e.stopPropagation()}>
-                      {pkg.status === 'ARRIVED' && (
-                        <input
-                          type="checkbox"
-                          checked={selectedForBulkPickup.has(pkg.id)}
-                          onChange={(e) => {
-                            const newSet = new Set(selectedForBulkPickup);
-                            if (e.target.checked) {
-                              newSet.add(pkg.id);
-                            } else {
-                              newSet.delete(pkg.id);
-                            }
-                            setSelectedForBulkPickup(newSet);
-                          }}
-                          className="accent-blue-600 cursor-pointer"
-                        />
-                      )}
-                    </td>
-                    <td className="px-6 py-4 cursor-pointer" onClick={() => setSelectedPkg(pkg)}>
+              <tbody className="divide-y divide-slate-50">
+                {filteredPackages.map(pkg => (
+                  <tr key={pkg.id} className="hover:bg-blue-50/50 cursor-pointer transition-colors group" onClick={() => setSelectedPkg(pkg)}>
+                    <td className="px-6 py-4">
                       <div className="font-mono text-slate-900 font-bold text-sm group-hover:text-blue-600">{pkg.trackingNumber}</div>
                       <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-1 font-medium"><Truck className="w-3 h-3" /> {pkg.courier} • Size {pkg.size}</div>
                     </td>
@@ -681,20 +434,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                        <span className="font-mono bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold border border-slate-200">{pkg.pickupCode}</span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      {(() => {
-                        const statusColor = getStatusColor(pkg.status);
-                        const StatusIcon = pkg.status === 'ARRIVED' ? PackageIcon : 
-                                          pkg.status === 'PICKED' ? CheckCircle : Trash2;
-                        return (
-                          <span className={twMerge(
-                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border-2 transition-all",
-                            statusColor.bg, statusColor.text, statusColor.border
-                          )}>
-                            <StatusIcon className="h-3 w-3" />
-                            {pkg.status}
-                          </span>
-                        );
-                      })()}
+                      <span className={twMerge(
+                        "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide",
+                        pkg.status === 'ARRIVED' ? "bg-blue-100 text-blue-700" :
+                        pkg.status === 'PICKED' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                      )}>
+                        {pkg.status}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                        <button className="p-2 hover:bg-blue-100 text-slate-400 hover:text-blue-600 rounded-lg transition-colors">
@@ -703,110 +449,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                     </td>
                   </tr>
                 ))}
-
-              </tbody>
-              </table>
-            </div>
-          </div>
-          
-          {/* Empty State */}
-          {filteredPackages.length === 0 && (
-            <EmptyState
-              icon={Inbox}
-              title="Tidak ada paket"
-              description="Belum ada paket yang sesuai dengan pencarian atau filter Anda. Coba sesuaikan kriteria pencarian atau tambah paket baru."
-              action={{
-                label: "Tambah Paket",
-                onClick: () => setIsAddModalOpen(true)
-              }}
-            />
-          )}
-        </div>
-
-        {/* Mobile Card Layout */}
-        <div className="md:hidden space-y-4">
-          {paginatedPackages.map((pkg) => {
-            const statusColor = getStatusColor(pkg.status);
-            const StatusIcon = pkg.status === 'ARRIVED' ? PackageIcon : 
-                              pkg.status === 'PICKED' ? CheckCircle : Trash2;
-            return (
-              <div 
-                key={pkg.id}
-                className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all active:scale-98"
-                onClick={() => setSelectedPkg(pkg)}
-              >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="font-mono text-sm font-bold text-slate-900">{pkg.trackingNumber}</div>
-                    <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                      <Truck className="w-3 h-3" /> {pkg.courier} • Size {pkg.size}
-                    </div>
-                  </div>
-                  <span className={twMerge(
-                    "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wide border-2",
-                    statusColor.bg, statusColor.text, statusColor.border
-                  )}>
-                    <StatusIcon className="h-2.5 w-2.5" />
-                    {pkg.status}
-                  </span>
-                </div>
-
-                {/* Recipient */}
-                <div className="mb-2">
-                  <div className="text-sm font-semibold text-slate-800">{pkg.recipientName}</div>
-                  <div className="text-xs text-slate-500">Unit {pkg.unitNumber}</div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                  <div className="text-xs text-slate-500">
-                    {new Date(pkg.dates.arrived).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                  </div>
-                  <div className="font-mono text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded font-bold">
-                    {pkg.pickupCode}
-                  </div>
-                </div>
-
-                {/* Checkbox untuk bulk pickup */}
-                {pkg.status === 'ARRIVED' && (
-                  <div className="mt-3 pt-3 border-t border-slate-100">
-                    <label className="flex items-center gap-2 text-xs text-slate-600">
-                      <input
-                        type="checkbox"
-                        checked={selectedForBulkPickup.has(pkg.id)}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          const newSet = new Set(selectedForBulkPickup);
-                          if (e.target.checked) {
-                            newSet.add(pkg.id);
-                          } else {
-                            newSet.delete(pkg.id);
-                          }
-                          setSelectedForBulkPickup(newSet);
-                        }}
-                        className="accent-blue-600"
-                      />
-                      Pilih untuk bulk pickup
-                    </label>
-                  </div>
+                {filteredPackages.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-16 text-center text-slate-400">
+                       <PackageIcon className="w-12 h-12 mx-auto mb-3 text-slate-200" />
+                       <p className="font-medium">No packages found</p>
+                       <p className="text-xs">Try adjusting your search or filters</p>
+                    </td>
+                  </tr>
                 )}
-              </div>
-            );
-          })}
-
-          {/* Mobile Empty State */}
-          {filteredPackages.length === 0 && (
-            <EmptyState
-              icon={Inbox}
-              title="Tidak ada paket"
-              description="Belum ada paket yang sesuai dengan pencarian atau filter Anda."
-              action={{
-                label: "Tambah Paket",
-                onClick: () => setIsAddModalOpen(true)
-              }}
-            />
-          )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -815,18 +469,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       {/* 1. ADD PACKAGE MODAL */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) setIsAddModalOpen(false) }}>
-          <div className="bg-white rounded-2xl w-full sm:max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2"><Plus className="w-5 h-5 text-blue-600" /> Receive Package</h3>
               <button onClick={() => setIsAddModalOpen(false)}><X className="w-5 h-5 text-slate-400 hover:text-red-500 transition-colors" /></button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                <div className="space-y-5">
                  <div>
                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Tracking / AWB</label>
                    <div className="flex gap-2">
                      <input required autoFocus className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.tracking} onChange={e => setFormData({...formData, tracking: e.target.value})} placeholder="Scan or type..." />
-                     <button type="button" onClick={() => setIsScannerOpen(true)} className="p-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors" title="Scan Barcode"><QrCode className="w-5 h-5" /></button>
+                     <button type="button" className="p-2.5 bg-slate-100 rounded-lg hover:bg-slate-200 text-slate-600"><QrCode className="w-5 h-5" /></button>
                    </div>
                  </div>
                  
@@ -969,7 +623,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       {/* 2. DETAIL & ACTION MODAL */}
       {selectedPkg && (
         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={(e) => { if(e.target === e.currentTarget) setSelectedPkg(null) }}>
-           <div className="bg-white rounded-2xl w-full sm:max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
               <div className="relative h-48 bg-slate-100 group">
                 {selectedPkg.photo ? (
                   <img src={selectedPkg.photo} className="w-full h-full object-cover" />
@@ -1055,7 +709,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                            const loc = locations.find(l => l.id === selectedPkg.locationId);
                            const settings = StorageService.getSettings();
                            if(loc) WhatsAppService.sendNotification(selectedPkg, loc, settings);
-                           showToast('success', 'Notifikasi berhasil dikirim ulang!');
+                           alert("Notification resent to queue!");
                         }} className="bg-blue-50 hover:bg-blue-100 text-blue-700 py-3 rounded-xl font-bold text-sm flex items-center justify-center transition-colors">
                             <MessageCircle className="w-5 h-5" />
                         </button>
@@ -1071,13 +725,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
            </div>
         </div>
       )}
-
-      {/* Barcode Scanner Modal */}
-      <BarcodeScanner 
-        isOpen={isScannerOpen}
-        onClose={() => setIsScannerOpen(false)}
-        onScan={(code) => setFormData({...formData, tracking: code})}
-      />
     </div>
   );
 };
