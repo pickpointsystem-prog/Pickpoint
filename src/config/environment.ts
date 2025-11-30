@@ -1,6 +1,17 @@
 type AppEnv = "development" | "qa" | "demo" | "production";
 
-const metaEnv = typeof import.meta !== "undefined" ? import.meta.env : undefined;
+type ImportMetaWithEnv = ImportMeta & {
+  env: Record<string, string | undefined>;
+};
+
+const resolveMetaEnv = (): Record<string, string | undefined> | undefined => {
+  if (typeof import.meta === "object" && import.meta && "env" in import.meta) {
+    return (import.meta as ImportMetaWithEnv).env;
+  }
+  return undefined;
+};
+
+const metaEnv = resolveMetaEnv();
 
 const normalizeEnv = (value?: string): AppEnv => {
   const normalized = (value || "").toLowerCase();

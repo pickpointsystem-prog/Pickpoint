@@ -1,3 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Custom Sidebar Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
@@ -13,12 +19,6 @@
   scrollbar-width: thin;
   scrollbar-color: #334155 #1e293b;
 }
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 body {
   font-family: 'Inter', sans-serif;

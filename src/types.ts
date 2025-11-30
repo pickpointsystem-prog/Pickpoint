@@ -51,6 +51,7 @@ export interface Package {
     picked?: string; // ISO Date
     destroyed?: string; // ISO Date
   };
+  pickupCode?: string;
   feePaid: number;
   paymentTimestamp?: string;
   photo?: string; // Base64 or URL

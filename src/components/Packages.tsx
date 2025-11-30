@@ -13,6 +13,8 @@ interface PackagesProps {
   user: User;
 }
 
+const generatePickupCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+
 const Packages: React.FC<PackagesProps> = ({ user }) => {
   const [packages, setPackages] = useState<Package[]>([]);
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'HISTORY'>('ACTIVE');
@@ -93,6 +95,7 @@ const Packages: React.FC<PackagesProps> = ({ user }) => {
       locationId: formData.locationId,
       status: 'ARRIVED',
       dates: { arrived: new Date().toISOString() },
+      pickupCode: generatePickupCode(),
       feePaid: 0,
       photo: formData.photo,
       notificationStatus: 'PENDING'
@@ -368,7 +371,7 @@ const Packages: React.FC<PackagesProps> = ({ user }) => {
                   </div>
                   <div>
                     <span className="block text-xs text-slate-400">Pickup Code</span>
-                    <span className="font-mono bg-slate-100 px-2 py-0.5 rounded">{selectedPkg.pickupCode}</span>
+                    <span className="font-mono bg-slate-100 px-2 py-0.5 rounded">{selectedPkg.pickupCode ?? '—'}</span>
                   </div>
                   {selectedPkg.dates.picked && (
                     <div>
