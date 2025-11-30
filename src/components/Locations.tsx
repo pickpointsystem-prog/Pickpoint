@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Location, PricingSchema, PricingType } from '../types';
 import { StorageService } from '../services/storage';
 import { Plus, Trash2, Edit2, MapPin, Package, Settings, Truck, CreditCard, X } from 'lucide-react';
+import config from '../config/environment';
 import { twMerge } from 'tailwind-merge';
 
 // --- HELPER COMPONENTS (Moved outside to prevent re-render focus loss) ---
