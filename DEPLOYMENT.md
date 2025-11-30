@@ -93,6 +93,8 @@ npm run preview:demo
 | `VITE_APP_ENV` | Environment name | `production`, `qa`, `demo`, `development` |
 | `VITE_WHATSAPP_TOKEN` | WhatsApp API token | Your API key |
 | `VITE_WHATSAPP_API_URL` | WhatsApp API endpoint (proxy) | `/api/wa-proxy` |
+| `WA_GATEWAY_URL` | Server-side real gateway URL (Vercel env) | `https://seen.getsender.id/send-message` |
+| `WA_GATEWAY_API_KEY` | Server-side secret API key (Vercel env) | `********` |
 | `VITE_PUBLIC_DOMAIN` | Public domain | `pickpoint.my.id` |
 | `VITE_ADMIN_DOMAIN` | Admin domain | `admin.pickpoint.my.id` |
 | `VITE_ENABLE_ANALYTICS` | Enable analytics | `true` / `false` |
@@ -260,6 +262,7 @@ npm run build:production
 - Client: set `VITE_WHATSAPP_API_URL=/api/wa-proxy`
 - Server (Vercel): set `WA_GATEWAY_URL` to your actual gateway URL (e.g., `https://seen.getsender.id/send-message`)
 - Alternatively, provide `endpoint` in the request body so the proxy forwards to that URL
+ - Do NOT expose API key with `VITE_`; use `WA_GATEWAY_API_KEY` server-side
 
 ---
 

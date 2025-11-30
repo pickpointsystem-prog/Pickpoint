@@ -13,29 +13,31 @@ const sendRawMessage = async (phone: string, message: string, settings: AppSetti
   }
 
   const payload = {
-    api_key: settings.waApiKey,
     sender: settings.waSender,
     number: formattedPhone,
-    message: message
+    message: message,
+    // Allow passing endpoint override only if explicitly set (avoid exposing secret)
+    endpoint: settings.waEndpoint || undefined
   };
 
   try {
     const endpoint = settings.waEndpoint || config.whatsappApiUrl;
     console.log(`[WA Gateway] Endpoint: ${endpoint} | Sending to ${formattedPhone}...`);
 
-    const response = await fetch(endpoint, {
+    // If endpoint is relative to /api (proxy style) ensure we prepend origin in development
+    const finalEndpoint = endpoint.startsWith('/') ? `${window.location.origin}${endpoint}` : endpoint;
+    const response = await fetch(finalEndpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        // Many gateways expect bearer auth; keep body api_key for compatibility
-        ...(settings.waApiKey ? { 'Authorization': `Bearer ${settings.waApiKey}` } : {})
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
     });
 
     // Check for HTTP errors (like 404, 500)
     if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+      const errorBody = await response.text().catch(() => '');
+      throw new Error(`HTTP ${response.status} ${response.statusText} | Body: ${errorBody.slice(0,300)}`);
     }
 
     // Try read JSON; if fails, read text for diagnostics

@@ -15,15 +15,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { api_key, sender, number, message, endpoint } = req.body || {};
+    const { sender, number, message, endpoint, footer, full, msgid } = req.body || {};
+
+    // Inject API key from env if not provided (avoid exposing in client)
+    const api_key = process.env.WA_GATEWAY_API_KEY || req.body?.api_key;
 
     const target = endpoint || process.env.WA_GATEWAY_URL;
     if (!target) {
       res.setHeader('Access-Control-Allow-Origin', '*');
       return res.status(400).json({ status: false, msg: 'Missing gateway endpoint (provide in body.endpoint or env WA_GATEWAY_URL)' });
     }
-
-    const payload = { api_key, sender, number, message };
+    const payload: Record<string, any> = { api_key, sender, number, message };
+    if (footer) payload.footer = footer;
+    if (typeof full !== 'undefined') payload.full = full;
+    if (msgid) payload.msgid = msgid;
 
     const resp = await fetch(target, {
       method: 'POST',
