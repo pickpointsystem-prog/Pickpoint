@@ -1,7 +1,9 @@
 
 import React from 'react';
+import { twMerge } from 'tailwind-merge';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Zap, Users, BarChart3, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Zap, Users, BarChart3, CheckCircle2, Package as PackageIcon } from 'lucide-react';
+import { StorageService } from '../services/storage';
 
 const Landing: React.FC = () => {
   return (
@@ -13,30 +15,24 @@ const Landing: React.FC = () => {
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">P</div>
             <span className="text-xl font-bold tracking-tight">Pickpoint</span>
           </div>
-          <div className="flex gap-4">
-             <Link to="/tracking" className="text-sm font-medium text-slate-600 hover:text-blue-600 px-4 py-2">Track Package</Link>
-             <Link to="/form" className="text-sm font-medium bg-slate-900 text-white px-5 py-2 rounded-lg hover:bg-black transition-colors">Register Unit</Link>
-          </div>
+           {/* Tidak ada link tracking/form di landing page untuk tenant */}
         </div>
       </nav>
 
       {/* Hero Section */}
-      <header className="py-20 px-6 text-center max-w-4xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider mb-6">
-          <Zap className="w-4 h-4" /> Smart Apartment Management
+      <header className="py-20 px-6 text-center max-w-4xl mx-auto animate-fade-in">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-blue-500 via-sky-400 to-cyan-400 text-white text-xs font-bold uppercase tracking-wider mb-6 animate-bounce">
+          <Zap className="w-4 h-4 animate-spin" /> Solusi Paket Otomatis
         </div>
-        <h1 className="text-5xl md:text-6xl font-bold text-slate-900 tracking-tight mb-6 leading-tight">
-          Modern Package Management for <span className="text-blue-600">Premium Residences</span>
+        <h1 className="text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight mb-6 leading-tight animate-slide-in">
+          Pickpoint: Mudah, Aman, & Efisien
         </h1>
-        <p className="text-lg text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed">
-          Stop lost packages and front-desk chaos. Pickpoint provides an automated system for receiving, tracking, and distributing resident packages with WhatsApp integration.
+        <p className="text-lg text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-in">
+          Kelola paket apartemen tanpa ribet. Notifikasi WhatsApp otomatis, pickup dengan kode unik, dan laporan digital siap pakai. Cocok untuk manajemen gedung modern.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="https://wa.me/628123456789" className="px-8 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
-            Book a Demo <ChevronRight className="w-5 h-5" />
-          </a>
-          <a href="/admin" className="px-8 py-4 bg-white text-slate-700 font-bold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all flex items-center justify-center">
-            Login to Dashboard
+        <div className="flex justify-center gap-4 mt-8">
+          <a href="https://wa.me/628123456789" target="_blank" rel="noopener" className="px-8 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 animate-pulse flex items-center justify-center gap-2">
+            Coba Demo Gratis
           </a>
         </div>
       </header>
@@ -44,65 +40,54 @@ const Landing: React.FC = () => {
       {/* Features Grid */}
       <section className="py-20 bg-slate-50 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            {
-              icon: ShieldCheck,
-              title: "Secure & Accountable",
-              desc: "Every package is scanned, photographed, and logged. Digital proof of pickup ensures zero disputes."
-            },
-            {
-              icon: Users,
-              title: "Resident Membership",
-              desc: "Monetize your storage. Offer free storage for members and charge fees for non-members automatically."
-            },
-            {
-              icon: Zap,
-              title: "Instant WA Notifications",
-              desc: "Residents get a WhatsApp message the second a package arrives with a secure pickup code."
-            }
-          ].map((f, i) => (
-            <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-6">
-                <f.icon className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-3">{f.title}</h3>
-              <p className="text-slate-500 leading-relaxed">{f.desc}</p>
-            </div>
-          ))}
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-blue-100 hover:shadow-lg transition-shadow animate-fade-in">
+            <ShieldCheck className="w-10 h-10 text-blue-600 mb-4 animate-bounce" />
+            <h3 className="text-xl font-bold text-slate-800 mb-3">Keamanan & Akuntabilitas</h3>
+            <p className="text-slate-500 leading-relaxed">Setiap paket difoto, dicatat, dan pickup diverifikasi dengan kode unik. Tidak ada lagi paket hilang atau komplain.</p>
+          </div>
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-blue-100 hover:shadow-lg transition-shadow animate-fade-in delay-100">
+            <Users className="w-10 h-10 text-blue-600 mb-4 animate-bounce" />
+            <h3 className="text-xl font-bold text-slate-800 mb-3">Membership & Laporan Digital</h3>
+            <p className="text-slate-500 leading-relaxed">Buka peluang pendapatan baru. Member bebas biaya simpan, semua aktivitas tercatat dan bisa diekspor kapan saja.</p>
+          </div>
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-blue-100 hover:shadow-lg transition-shadow animate-fade-in delay-200">
+            <Zap className="w-10 h-10 text-blue-600 mb-4 animate-bounce" />
+            <h3 className="text-xl font-bold text-slate-800 mb-3">Notifikasi WhatsApp Otomatis</h3>
+            <p className="text-slate-500 leading-relaxed">Penghuni langsung tahu saat paket tiba. Pickup mudah, cepat, dan aman tanpa ribet komunikasi manual.</p>
+          </div>
         </div>
       </section>
 
-      {/* Pricing / Value Prop */}
-      <section className="py-20 px-6 border-t border-slate-200">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-12">
-           <div className="flex-1 space-y-6">
-             <h2 className="text-3xl font-bold text-slate-900">Why Building Managers Choose Pickpoint</h2>
-             <ul className="space-y-4">
-               {[
-                 "Reduce front-desk workload by 70%",
-                 "Generate new revenue stream via Storage Fees",
-                 "Full audit trail & analytics dashboard",
-                 "Compatible with any courier service"
-               ].map((item, i) => (
-                 <li key={i} className="flex items-center gap-3 text-slate-600 font-medium">
-                   <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" /> {item}
-                 </li>
-               ))}
-             </ul>
-           </div>
-           <div className="flex-1 bg-slate-900 text-white p-10 rounded-3xl shadow-2xl relative overflow-hidden">
-             <div className="relative z-10">
-               <h3 className="text-2xl font-bold mb-2">Ready to upgrade?</h3>
-               <p className="text-slate-400 mb-6">Join 50+ apartments using Pickpoint.</p>
-               <div className="bg-white/10 p-4 rounded-xl backdrop-blur mb-4">
-                 <div className="text-sm text-slate-300 uppercase tracking-wide font-bold mb-1">Total Packages Processed</div>
-                 <div className="text-4xl font-bold">125,000+</div>
-               </div>
-             </div>
-             <BarChart3 className="absolute -bottom-10 -right-10 w-64 h-64 text-white/5" />
-           </div>
+      {/* How It Works */}
+      <section className="py-20 px-6">
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-2xl font-bold text-slate-900 mb-8 animate-fade-in">Bagaimana Pickpoint Bekerja?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="flex flex-col items-center">
+              <PackageIcon className="w-10 h-10 text-blue-600 mb-3 animate-bounce" />
+              <span className="font-bold text-slate-800 mb-2">Terima Paket</span>
+              <span className="text-slate-500 text-sm">Front desk scan & foto paket</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <Zap className="w-10 h-10 text-blue-600 mb-3 animate-bounce" />
+              <span className="font-bold text-slate-800 mb-2">Notifikasi WhatsApp</span>
+              <span className="text-slate-500 text-sm">Penghuni langsung dapat info & kode pickup</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <ShieldCheck className="w-10 h-10 text-blue-600 mb-3 animate-bounce" />
+              <span className="font-bold text-slate-800 mb-2">Pickup Aman</span>
+              <span className="text-slate-500 text-sm">Verifikasi kode, serah terima tercatat digital</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <BarChart3 className="w-10 h-10 text-blue-600 mb-3 animate-bounce" />
+              <span className="font-bold text-slate-800 mb-2">Laporan & Analitik</span>
+              <span className="text-slate-500 text-sm">Semua data bisa diekspor, analisa performa</span>
+            </div>
+          </div>
         </div>
       </section>
+
+      {/* ...existing code... */}
 
       <footer className="bg-white border-t border-slate-100 py-12 px-6 text-center text-slate-400 text-sm">
         <p>&copy; 2024 Pickpoint Systems. All rights reserved.</p>

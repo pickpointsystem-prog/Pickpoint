@@ -80,6 +80,25 @@ export interface AppSettings {
   waTemplateReminder: string; // Reminder h+7
   
   enablePaymentGateway: boolean;
+
+  // Landing page configuration
+  landingConfig?: {
+    heroTitle?: string;
+    heroSubtitle?: string;
+    valueProps?: string[];
+    pricing?: Array<{
+      name: string;
+      price: string;
+      period?: string;
+      features: string[];
+      highlight?: boolean;
+    }>;
+    addons?: Array<{
+      title: string;
+      desc: string;
+      price: string;
+    }>;
+  };
 }
 
 export interface DashboardStats {

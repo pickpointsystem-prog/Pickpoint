@@ -7,7 +7,7 @@ import { Save, Send, AlertCircle, CheckCircle, Database } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(StorageService.getSettings());
-  const [activeTab, setActiveTab] = useState<'CONFIG' | 'TEMPLATES'>('CONFIG');
+    const [activeTab, setActiveTab] = useState<'CONFIG' | 'TEMPLATES' | 'LANDING'>('CONFIG');
   
   // Test State
   const [testPhone, setTestPhone] = useState('');
@@ -73,6 +73,12 @@ const Settings: React.FC = () => {
             className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${activeTab === 'TEMPLATES' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
         >
             Notification Templates
+        </button>
+        <button 
+            onClick={() => setActiveTab('LANDING')} 
+            className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${activeTab === 'LANDING' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+            Landing Content
         </button>
       </div>
 
@@ -235,6 +241,44 @@ const Settings: React.FC = () => {
              </div>
           </div>
       )}
+
+            {activeTab === 'LANDING' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <h4 className="font-bold text-slate-800">Hero Section</h4>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-600 mb-1.5">Judul</label>
+                            <input className="w-full border rounded-lg px-3 py-2.5 text-sm" value={settings.landingConfig?.heroTitle || ''} onChange={e => setSettings({ ...settings, landingConfig: { ...(settings.landingConfig||{}), heroTitle: e.target.value } })} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-600 mb-1.5">Subjudul</label>
+                            <textarea className="w-full border rounded-lg px-3 py-2.5 text-sm h-24" value={settings.landingConfig?.heroSubtitle || ''} onChange={e => setSettings({ ...settings, landingConfig: { ...(settings.landingConfig||{}), heroSubtitle: e.target.value } })} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-600 mb-1.5">Value Props (tiap baris satu poin)</label>
+                            <textarea className="w-full border rounded-lg px-3 py-2.5 text-sm h-28" value={(settings.landingConfig?.valueProps || []).join('\n')} onChange={e => setSettings({ ...settings, landingConfig: { ...(settings.landingConfig||{}), valueProps: e.target.value.split('\n').filter(Boolean) } })} />
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <h4 className="font-bold text-slate-800">Pricing & Add-ons</h4>
+                        <p className="text-xs text-slate-500">Untuk saat ini, edit melalui JSON sederhana di bawah.</p>
+                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Pricing (JSON)</label>
+                        <textarea className="w-full border rounded-lg px-3 py-2.5 text-sm h-40 font-mono" value={JSON.stringify(settings.landingConfig?.pricing || [], null, 2)} onChange={e => {
+                            try {
+                                const parsed = JSON.parse(e.target.value);
+                                setSettings({ ...settings, landingConfig: { ...(settings.landingConfig||{}), pricing: parsed } });
+                            } catch {}
+                        }} />
+                        <label className="block text-xs font-bold text-slate-600 mb-1.5">Add-ons (JSON)</label>
+                        <textarea className="w-full border rounded-lg px-3 py-2.5 text-sm h-40 font-mono" value={JSON.stringify(settings.landingConfig?.addons || [], null, 2)} onChange={e => {
+                            try {
+                                const parsed = JSON.parse(e.target.value);
+                                setSettings({ ...settings, landingConfig: { ...(settings.landingConfig||{}), addons: parsed } });
+                            } catch {}
+                        }} />
+                    </div>
+                </div>
+            )}
     </div>
   );
 };

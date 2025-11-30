@@ -92,13 +92,34 @@ const Locations: React.FC = () => {
                   <button onClick={() => handleDelete(loc.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4" /></button>
                 </div>
              </div>
-             
+
+             {/* Registration Form Link */}
+             <div className="mb-3">
+               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Form Link</label>
+               <div className="flex items-center gap-2">
+                 <input
+                   type="text"
+                   className="w-full px-2 py-1 text-xs border border-slate-200 rounded bg-slate-50 text-slate-600"
+                   value={`${window.location.origin}/form/${loc.id}`}
+                   readOnly
+                   onFocus={e => e.target.select()}
+                 />
+                 <button
+                   type="button"
+                   className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                   onClick={() => {
+                     navigator.clipboard.writeText(`${window.location.origin}/form/${loc.id}`);
+                   }}
+                 >Copy</button>
+               </div>
+             </div>
+
              <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 border-t border-slate-50 pt-3">
-               <div className={twMerge("flex items-center gap-2 p-2 rounded", loc.enableDelivery ? "bg-green-50 text-green-700" : "bg-slate-50 text-slate-400")}>
+               <div className={twMerge("flex items-center gap-2 p-2 rounded", loc.enableDelivery ? "bg-green-50 text-green-700" : "bg-slate-50 text-slate-400")}> 
                  <Truck className="w-3.5 h-3.5" />
                  <span className="font-medium">{loc.enableDelivery ? `Rp ${loc.deliveryFee.toLocaleString()}` : 'No Delivery'}</span>
                </div>
-               <div className={twMerge("flex items-center gap-2 p-2 rounded", loc.enableMembership ? "bg-purple-50 text-purple-700" : "bg-slate-50 text-slate-400")}>
+               <div className={twMerge("flex items-center gap-2 p-2 rounded", loc.enableMembership ? "bg-purple-50 text-purple-700" : "bg-slate-50 text-slate-400")}> 
                  <CreditCard className="w-3.5 h-3.5" />
                  <span className="font-medium">{loc.enableMembership ? `Rp ${loc.membershipFee.toLocaleString()}` : 'No Member'}</span>
                </div>

@@ -1,22 +1,28 @@
 
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { StorageService } from '../services/storage';
 import { Location, Customer } from '../types';
 import { UserCheck, Building } from 'lucide-react';
 
+
 const SelfRegistration: React.FC = () => {
+  const { locationId: paramLocationId } = useParams<{ locationId?: string }>();
   const [locations, setLocations] = useState<Location[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     unit: '',
-    locationId: ''
+    locationId: paramLocationId || ''
   });
 
   useEffect(() => {
     setLocations(StorageService.getLocations());
-  }, []);
+    if (paramLocationId) {
+      setFormData(f => ({ ...f, locationId: paramLocationId }));
+    }
+  }, [paramLocationId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,25 +64,41 @@ const SelfRegistration: React.FC = () => {
           <h1 className="text-xl font-bold">Resident Registration</h1>
           <p className="text-slate-400 text-sm mt-1">Register your WhatsApp to receive package alerts</p>
         </div>
-        
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Select Building / Apartment</label>
-            <div className="relative">
-              <Building className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
-              <select 
-                className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                required
-                value={formData.locationId}
-                onChange={e => setFormData({...formData, locationId: e.target.value})}
-              >
-                <option value="">Select Location...</option>
-                {locations.map(l => (
-                  <option key={l.id} value={l.id}>{l.name}</option>
-                ))}
-              </select>
+          {/* Location selection or display */}
+          {paramLocationId ? (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Building / Apartment</label>
+              <div className="relative">
+                <Building className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                <input
+                  type="text"
+                  className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg bg-slate-100 text-slate-500"
+                  value={locations.find(l => l.id === paramLocationId)?.name || paramLocationId}
+                  disabled
+                  readOnly
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Select Building / Apartment</label>
+              <div className="relative">
+                <Building className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                <select 
+                  className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  required
+                  value={formData.locationId}
+                  onChange={e => setFormData({...formData, locationId: e.target.value})}
+                >
+                  <option value="">Select Location...</option>
+                  {locations.map(l => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
              <div>

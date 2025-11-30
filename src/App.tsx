@@ -18,6 +18,8 @@ if (config.enableDebugMode) {
   );
 }
 
+const isDashboardDomain = window.location.hostname === config.dashboardDomain;
+
 const App: React.FC = () => {
   return (
     <BrowserRouter>
@@ -27,8 +29,8 @@ const App: React.FC = () => {
             <Route path="/" element={<Landing />} />
             <Route path="/tracking" element={<Tracking />} />
             <Route path="/form" element={<SelfRegistration />} />
-            <Route path="/admin/*" element={<AdminApp />} />
-            <Route path="*" element={<Navigate to="/admin" replace />} />
+            {isDashboardDomain && <Route path="/admin/*" element={<AdminApp />} />}
+            <Route path="*" element={<Navigate to={isDashboardDomain ? "/admin" : "/"} replace />} />
           </Routes>
         </ToastProvider>
       </AppProvider>

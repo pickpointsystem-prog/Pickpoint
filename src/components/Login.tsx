@@ -89,11 +89,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </button>
         </form>
 
-        <div className="mt-8 text-center text-xs text-slate-400">
-          <p>Demo Credentials:</p>
-          <p>Admin: admin / password</p>
-          <p>Staff: staff / password</p>
-        </div>
+        {window.location.hostname !== 'admin.pickpoint.my.id' && (
+          <div className="mt-8 text-center text-xs text-slate-400">
+            <p>Demo Credentials:</p>
+            <p>Admin: admin / password</p>
+            <p>Staff: staff / password</p>
+          </div>
+        )}
       </div>
     </div>
   );

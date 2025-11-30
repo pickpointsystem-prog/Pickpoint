@@ -11,7 +11,42 @@ export const INITIAL_SETTINGS: AppSettings = {
   
   waTemplateReminder: "Halo *{name}*,\n\nReminder: Paket *{tracking}* masih menunggu pengambilan di *{location}*.\n\nHarap segera diambil untuk menghindari penumpukan.\nCek detail: {link}",
 
-  enablePaymentGateway: false
+  enablePaymentGateway: false,
+  landingConfig: {
+    heroTitle: 'Manajemen Paket Modern untuk Residens Premium',
+    heroSubtitle: 'Hentikan paket hilang dan chaos di front desk. Pickpoint menyediakan sistem otomatis untuk menerima, melacak, dan mendistribusikan paket penghuni dengan integrasi WhatsApp.',
+    valueProps: [
+      'Kurangi beban front desk hingga 70%',
+      'Aliran pendapatan dari biaya penyimpanan',
+      'Jejak audit lengkap & dashboard analitik',
+      'Kompatibel dengan semua kurir'
+    ],
+    pricing: [
+      {
+        name: 'Starter',
+        price: 'Rp 499.000',
+        period: '/bulan',
+        features: ['Penerimaan & pencatatan paket','Notifikasi WhatsApp dasar','Kode pickup aman','Laporan bulanan']
+      },
+      {
+        name: 'Pro',
+        price: 'Rp 999.000',
+        period: '/bulan',
+        features: ['Semua fitur Starter','Membership & bebas biaya simpan','Laporan harian + dashboard KPI','Ekspor CSV & integrasi ringan'],
+        highlight: true
+      },
+      {
+        name: 'Enterprise',
+        price: 'Hubungi kami',
+        features: ['Multi-lokasi & SSO','Integrasi ERP/HRIS','Dukungan SLA & pelatihan tim','Kustomisasi alur kerja']
+      }
+    ],
+    addons: [
+      { title: 'Gateway WhatsApp Premium', desc: 'Reliabilitas tinggi & statistik pengiriman', price: 'Rp 299.000/bulan' },
+      { title: 'Layanan Pengantaran Internal', desc: 'Workflow kurir internal gedung', price: 'Rp 499.000/bulan' },
+      { title: 'Penyimpanan Foto Tambahan', desc: 'Retensi foto hingga 12 bulan', price: 'Rp 99.000/bulan' }
+    ]
+  }
 };
 
 export const INITIAL_LOCATIONS: Location[] = [
