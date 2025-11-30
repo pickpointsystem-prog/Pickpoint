@@ -100,7 +100,7 @@ const Locations: React.FC = () => {
                  <input
                    type="text"
                    className="w-full px-2 py-1 text-xs border border-slate-200 rounded bg-slate-50 text-slate-600"
-                   value={`${window.location.origin}/form/${loc.id}`}
+                   value={`https://${config.publicDomain}/form/${loc.id}`}
                    readOnly
                    onFocus={e => e.target.select()}
                  />
@@ -108,7 +108,7 @@ const Locations: React.FC = () => {
                    type="button"
                    className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
                    onClick={() => {
-                     navigator.clipboard.writeText(`${window.location.origin}/form/${loc.id}`);
+                     navigator.clipboard.writeText(`https://${config.publicDomain}/form/${loc.id}`);
                    }}
                  >Copy</button>
                </div>
