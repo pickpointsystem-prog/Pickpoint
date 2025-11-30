@@ -26,7 +26,7 @@ const App: React.FC = () => {
       <AppProvider>
         <ToastProvider>
           <Routes>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={isDashboardDomain ? <Navigate to="/admin" replace /> : <Landing />} />
             <Route path="/tracking" element={<Tracking />} />
             <Route path="/form" element={<SelfRegistration />} />
             {isDashboardDomain && <Route path="/admin/*" element={<AdminApp />} />}
