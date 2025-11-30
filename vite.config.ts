@@ -14,5 +14,16 @@ export default defineConfig({
         secure: false
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          charts: ['recharts'],
+          ui: ['lucide-react', 'tailwind-merge', 'clsx']
+        }
+      }
+    }
   }
 })
