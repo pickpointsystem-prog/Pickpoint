@@ -13,11 +13,10 @@ const sendRawMessage = async (phone: string, message: string, settings: AppSetti
   }
 
   const payload = {
+    api_key: settings.waApiKey,
     sender: settings.waSender,
     number: formattedPhone,
-    message: message,
-    // Allow passing endpoint override only if explicitly set (avoid exposing secret)
-    endpoint: settings.waEndpoint || undefined
+    message: message
   };
 
   try {
@@ -47,7 +46,7 @@ const sendRawMessage = async (phone: string, message: string, settings: AppSetti
     } catch {
       const text = await response.text();
       console.error('[WA Gateway] Non-JSON response:', text);
-      return { success: false, error: 'Invalid gateway response (non-JSON)' };
+      return { success: false, error: 'Respon gateway tidak valid (format bukan JSON)' };
     }
     
     if (data.status === true) {
@@ -55,14 +54,14 @@ const sendRawMessage = async (phone: string, message: string, settings: AppSetti
       return { success: true };
     } else {
       console.error('[WA Gateway] API Error:', data);
-      return { success: false, error: data.msg || 'Unknown API Error' };
+      return { success: false, error: data.msg || 'Kesalahan API tidak diketahui' };
     }
 
   } catch (error: any) {
     console.error("[WA Gateway] Network/Fetch Failed", error);
     let errMsg = error.message;
     if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
-        errMsg = "Network Error: Possible CORS issue atau endpoint unreachable. Pertimbangkan proxy server (Vercel/Cloudflare) untuk menghindari CORS.";
+      errMsg = "Kesalahan jaringan: kemungkinan masalah CORS atau endpoint tidak dapat dijangkau. Pertimbangkan penggunaan proxy server (Vercel/Cloudflare) untuk menghindari CORS.";
     }
     return { success: false, error: errMsg };
   }
@@ -72,9 +71,10 @@ export const WhatsAppService = {
   // 1. New Package Notification
   sendNotification: async (pkg: Package, location: Location, settings: AppSettings): Promise<boolean> => {
     // Use environment-aware public domain
-    const publicUrl = config.env === 'development' 
-      ? `http://${config.publicDomain}`
-      : `https://${config.publicDomain}`;
+    const sanitizedDomain = config.publicDomain.replace(/^https?:\/\//, '');
+    const isLocalDomain = /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(sanitizedDomain);
+    const protocol = isLocalDomain ? 'http' : 'https';
+    const publicUrl = `${protocol}://${sanitizedDomain}`;
     
     const pickupLink = `${publicUrl}/tracking?id=${pkg.trackingNumber}`;
     
@@ -83,9 +83,7 @@ export const WhatsAppService = {
       .replace('{name}', pkg.recipientName)
       .replace('{tracking}', pkg.trackingNumber)
       .replace('{location}', location.name)
-      // Note: We intentionally do not use {code} in the new template design as requested
-      // but if the user adds it back to the template, it will work.
-      .replace('{code}', pkg.pickupCode) 
+      .replace('{code}', pkg.trackingNumber)
       .replace('{link}', pickupLink);
 
     const result = await sendRawMessage(pkg.recipientPhone, message, settings);
@@ -122,7 +120,7 @@ export const WhatsAppService = {
   // 3. Test Notification
   sendTestMessage: async (targetPhone: string, settings: AppSettings): Promise<{success: boolean, error?: string}> => {
     const time = new Date().toLocaleString();
-    const message = `*TEST NOTIFICATION*\n\nSystem: Pickpoint Dashboard\nTime: ${time}\nStatus: Connected ✅`;
+    const message = `*TEST NOTIFIKASI*\n\nSistem: Pickpoint Dashboard\nWaktu: ${time}\nStatus: Tersambung ✅`;
     
     return await sendRawMessage(targetPhone, message, settings);
   }

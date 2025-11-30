@@ -33,7 +33,6 @@ const Tracking: React.FC = () => {
     // Cari dengan case-insensitive dan trim space
     const found = packages.find(p => 
       p.trackingNumber.trim().toLowerCase() === trimmed.toLowerCase() ||
-      p.pickupCode.trim().toLowerCase() === trimmed.toLowerCase() ||
       p.id.toLowerCase() === trimmed.toLowerCase()
     );
 
@@ -112,9 +111,9 @@ const Tracking: React.FC = () => {
                  {/* Key Details */}
                  <div className="grid grid-cols-2 gap-4">
                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                     <p className="text-xs text-slate-400 font-bold uppercase">Pickup Code</p>
+                     <p className="text-xs text-slate-400 font-bold uppercase">AWB</p>
                      <p className="text-xl font-mono font-bold text-slate-800 tracking-wider">
-                       {result.pkg.status === 'ARRIVED' ? result.pkg.pickupCode : '---'}
+                       {result.pkg.trackingNumber}
                      </p>
                    </div>
                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">

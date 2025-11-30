@@ -82,7 +82,6 @@ const Packages: React.FC<PackagesProps> = ({ user }) => {
     e.preventDefault();
     if (!formData.locationId) return alert("Select Location");
 
-    const pickupCode = Math.floor(1000 + Math.random() * 9000).toString();
     const newPkg: Package = {
       id: `pkg_${Date.now()}`,
       trackingNumber: formData.tracking,
@@ -94,7 +93,6 @@ const Packages: React.FC<PackagesProps> = ({ user }) => {
       locationId: formData.locationId,
       status: 'ARRIVED',
       dates: { arrived: new Date().toISOString() },
-      pickupCode,
       feePaid: 0,
       photo: formData.photo,
       notificationStatus: 'PENDING'

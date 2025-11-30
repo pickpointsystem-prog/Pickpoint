@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
-import { useApp } from '../context/AppContext';
 import Login from './Login';
 import Dashboard from './Dashboard';
 import Locations from './Locations';
@@ -8,7 +7,17 @@ import Users from './Users';
 import Customers from './Customers';
 import Settings from './Settings';
 import Reports from './Reports';
-import { LayoutDashboard, MapPin, Users as UsersIcon, Settings as SettingsIcon, LogOut, UserCircle, BarChart3, Menu, X } from 'lucide-react';
+import {
+  LayoutDashboard,
+  MapPin,
+  Users as UsersIcon,
+  Settings as SettingsIcon,
+  LogOut,
+  UserCircle,
+  BarChart3,
+  Menu,
+  X
+} from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 
 type View = 'DASHBOARD' | 'LOCATIONS' | 'USERS' | 'CUSTOMERS' | 'SETTINGS' | 'REPORTS';
@@ -21,9 +30,12 @@ const AdminApp: React.FC = () => {
     try {
       const saved = localStorage.getItem('ui_isDesktopSidebarOpen');
       return saved === null ? true : saved === 'true';
-    } catch { return true; }
+    } catch {
+      return true;
+    }
   });
-  const { t, language, setLanguage } = useApp();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotif, setShowNotif] = useState(false);
 
   useEffect(() => {
     const sessionUser = sessionStorage.getItem('pp_session');
@@ -47,168 +59,204 @@ const AdminApp: React.FC = () => {
     return <Login onLogin={handleLogin} />;
   }
 
+  const viewTitles: Record<View, string> = {
+    DASHBOARD: 'Dasbor',
+    REPORTS: 'Laporan',
+    CUSTOMERS: 'Pelanggan',
+    LOCATIONS: 'Lokasi',
+    USERS: 'Pengguna',
+    SETTINGS: 'Pengaturan'
+  };
+
   const isAdmin = user.role === 'ADMIN';
 
-  const NavItem = ({ view, icon: Icon, label, translationKey, badge }: { view: View; icon: any; label: string, translationKey: string, badge?: number }) => (
+  const NavItem = ({ view, icon: Icon, label, badge }: { view: View; icon: React.ComponentType<any>; label: string; badge?: number }) => (
     <button
       onClick={() => {
         setCurrentView(view);
-        setMobileSidebarOpen(false); // Close sidebar on navigation (mobile only)
+        setMobileSidebarOpen(false);
       }}
       className={twMerge(
-        "flex items-center justify-between w-full px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg mb-1 group",
+        'group relative flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold tracking-tight transition-all duration-200',
+        isDesktopSidebarOpen ? 'gap-3' : 'gap-0 justify-center',
         currentView === view
-          ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-200 scale-105"
-          : "text-slate-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 hover:scale-102 hover:shadow-sm"
+          ? 'bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-500 text-white shadow-lg shadow-indigo-500/30'
+          : 'text-slate-500 hover:bg-slate-100/80 hover:text-slate-900'
       )}
     >
-      <div className="flex items-center">
-        <Icon className={twMerge(
-          "w-5 h-5 mr-3 transition-transform",
-          currentView === view ? "scale-110" : "group-hover:scale-110"
-        )} />
-        {t(translationKey) || label}
+      <div className={twMerge('flex items-center', isDesktopSidebarOpen ? 'gap-3' : 'gap-0')}>
+        <Icon
+          className={twMerge(
+            'h-5 w-5 transition-colors',
+            currentView === view ? 'text-white' : 'text-slate-400 group-hover:text-indigo-500'
+          )}
+        />
+        <span className={twMerge('whitespace-nowrap', isDesktopSidebarOpen ? 'block' : 'hidden')}>{label}</span>
+        {badge && <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">{badge}</span>}
       </div>
-      {badge && badge > 0 && (
-        <span className={twMerge(
-          "px-2 py-0.5 rounded-full text-xs font-bold",
-          currentView === view 
-            ? "bg-white text-blue-600" 
-            : "bg-red-500 text-white group-hover:scale-110"
-        )}>
-          {badge}
-        </span>
-      )}
     </button>
   );
 
-  const viewTitles: { [key in View]: string } = {
-    DASHBOARD: 'dashboard.title',
-    REPORTS: 'reports.title',
-    CUSTOMERS: 'customer.title',
-    LOCATIONS: 'location.title',
-    USERS: 'users.title',
-    SETTINGS: 'settings.title',
-  };
-
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
-      {/* Sidebar Overlay - for mobile */}
-      {isMobileSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 z-30 md:hidden" 
-          onClick={() => setMobileSidebarOpen(false)}
-        ></div>
-      )}
-
+    <div className="flex h-screen bg-slate-100/60">
       {/* Sidebar */}
-      <aside className={twMerge(
-        "fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 flex-col transition-transform duration-300 ease-in-out flex shadow-lg",
-        // Mobile behavior
-        isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full",
-        // Desktop behavior (override mobile)
-        "md:translate-x-0 md:relative md:shadow-none",
-        !isDesktopSidebarOpen && "md:hidden"
-      )}>
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">P</div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Pickpoint</h1>
+      <aside
+        className={twMerge(
+          'fixed left-0 top-0 z-40 h-full w-64 overflow-hidden border-r border-slate-200/80 bg-white/90 backdrop-blur-sm shadow-[0_24px_80px_-40px_rgba(54,76,126,0.35)] transition-transform duration-300',
+          isDesktopSidebarOpen ? 'md:w-64' : 'md:w-20',
+          isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        )}
+      >
+        <div className="relative flex items-center gap-3 border-b border-slate-200/70 bg-gradient-to-r from-white via-white to-slate-50 px-5 py-6">
+          <div className="rounded-xl bg-gradient-to-br from-indigo-500 via-sky-500 to-cyan-500 p-2.5 shadow-lg shadow-indigo-500/30">
+            <LayoutDashboard className="h-5 w-5 text-white" />
           </div>
-          <button className="md:hidden text-slate-500" onClick={() => setMobileSidebarOpen(false)}>
-            <X className="w-6 h-6"/>
+          {isDesktopSidebarOpen && (
+            <div>
+              <span className="block text-lg font-extrabold tracking-tight text-slate-900">Pickpoint</span>
+              <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">Smart Hub</span>
+            </div>
+          )}
+          <button
+            className="ml-auto grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-colors hover:border-blue-200 hover:text-blue-600 md:hidden"
+            onClick={() => setMobileSidebarOpen(false)}
+            aria-label="Tutup menu"
+          >
+            <X className="h-5 w-5" />
           </button>
         </div>
-        <p className="text-xs text-slate-400 mt-1 pl-[3.25rem] -mt-6 uppercase tracking-wider font-semibold">{t('sidebar.adminPanel')}</p>
-
-        <nav className="flex-1 p-4 overflow-y-auto mt-6">
-          <NavItem view="DASHBOARD" icon={LayoutDashboard} label="Overview" translationKey="dashboard.title" />
-          <NavItem view="REPORTS" icon={BarChart3} label="Analytics" translationKey="reports.title" />
-          <NavItem view="CUSTOMERS" icon={UserCircle} label="Customers" translationKey="customer.title" />
-          
+        <nav className="custom-scrollbar flex-1 overflow-y-auto px-2 py-4">
+          <NavItem view="DASHBOARD" icon={LayoutDashboard} label={isDesktopSidebarOpen ? 'Dasbor' : ''} />
+          <NavItem view="REPORTS" icon={BarChart3} label={isDesktopSidebarOpen ? 'Laporan' : ''} />
+          <NavItem view="CUSTOMERS" icon={UserCircle} label={isDesktopSidebarOpen ? 'Pelanggan' : ''} />
           {isAdmin && (
             <>
-              <div className="mt-6 mb-2 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Admin</div>
-              <NavItem view="LOCATIONS" icon={MapPin} label="Locations" translationKey="location.title" />
-              <NavItem view="USERS" icon={UsersIcon} label="Users" translationKey="users.title" />
-              <NavItem view="SETTINGS" icon={SettingsIcon} label="Settings" translationKey="settings.title" />
+              <div className={twMerge('mt-6 mb-2 px-4 text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-400', !isDesktopSidebarOpen && 'md:hidden')}>
+                Menu Admin
+              </div>
+              <NavItem view="LOCATIONS" icon={MapPin} label={isDesktopSidebarOpen ? 'Lokasi' : ''} />
+              <NavItem view="USERS" icon={UsersIcon} label={isDesktopSidebarOpen ? 'Pengguna' : ''} />
+              <NavItem view="SETTINGS" icon={SettingsIcon} label={isDesktopSidebarOpen ? 'Pengaturan' : ''} />
             </>
           )}
-          {/* Language Selector */}
-          <div className="mt-6 px-2">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">{t('settings.language')}</div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setLanguage('id')}
-                className={twMerge(
-                  "w-10 h-10 rounded-full flex items-center justify-center text-lg border transition-all",
-                  language === 'id' ? "bg-blue-50 border-blue-500 shadow-sm scale-110" : "bg-white border-slate-200 hover:bg-slate-50 grayscale hover:grayscale-0"
-                )}
-                title="Bahasa Indonesia"
-              >
-                🇮🇩
-              </button>
-              <button
-                onClick={() => setLanguage('en')}
-                className={twMerge(
-                  "w-10 h-10 rounded-full flex items-center justify-center text-lg border transition-all",
-                  language === 'en' ? "bg-blue-50 border-blue-500 shadow-sm scale-110" : "bg-white border-slate-200 hover:bg-slate-50 grayscale hover:grayscale-0"
-                )}
-                title="English"
-              >
-                🇬🇧
-              </button>
-            </div>
-          </div>
         </nav>
-
-        <div className="p-4 border-t border-slate-100 bg-slate-50">
-          <div className="flex items-center gap-3 mb-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
+        <div className={twMerge('border-t border-slate-200/80 bg-slate-50/80 p-4 transition-all duration-300', !isDesktopSidebarOpen && 'md:px-2')}>
+          <div className="flex items-center gap-3 px-2">
+            <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-sky-500 text-sm font-bold text-white">
               {user.name.charAt(0)}
             </div>
-            <div className="overflow-hidden">
-              <p className="text-sm font-medium text-slate-900 truncate">{user.name}</p>
-              <p className="text-xs text-slate-500 truncate capitalize">{user.role}</p>
+            <div className={twMerge('overflow-hidden text-left', !isDesktopSidebarOpen && 'md:hidden')}>
+              <p className="truncate text-sm font-semibold text-slate-800">{user.name}</p>
+              <p className="truncate text-xs uppercase tracking-[0.2em] text-slate-400">{user.role}</p>
             </div>
           </div>
-          <button onClick={handleLogout} className="flex items-center w-full px-2 py-2 text-xs font-medium text-red-600 hover:bg-red-50 rounded transition-colors">
-            <LogOut className="w-4 h-4 mr-2" />
-            {t('common.logout')}
+          <button
+            onClick={handleLogout}
+            className="mt-4 flex w-full items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-500 transition-colors hover:border-red-300 hover:bg-red-100"
+          >
+            <LogOut className="h-4 w-4" />
+            {isDesktopSidebarOpen ? 'Keluar' : ''}
           </button>
         </div>
       </aside>
 
-      <main className={`flex-1 overflow-auto relative ${isMobileSidebarOpen ? 'bg-black/10' : ''}`}>
-        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 md:px-8 py-4 flex justify-between items-center shadow-md">
-          <div className="flex items-center gap-4">
-            <button 
-              className="text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors" 
+      {/* Mobile overlay */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-slate-900/60 backdrop-blur-sm md:hidden"
+          onClick={() => setMobileSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <main
+        className={twMerge(
+          'flex-1 overflow-auto bg-gradient-to-br from-slate-50 via-white to-slate-100 transition-all duration-300',
+          isDesktopSidebarOpen ? 'md:ml-64' : 'md:ml-20'
+        )}
+      >
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white px-2 py-2 sm:px-4 sm:py-3 md:px-8">
+          <div className="flex items-center gap-3">
+            <button
+              className="rounded-lg border border-slate-200 p-2.5 text-slate-600 transition-colors hover:bg-slate-100"
               onClick={() => {
-                // Toggle based on screen size logic (simplified check)
                 if (window.innerWidth >= 768) {
                   const next = !isDesktopSidebarOpen;
                   setDesktopSidebarOpen(next);
-                  try { localStorage.setItem('ui_isDesktopSidebarOpen', String(next)); } catch {}
+                  try {
+                    localStorage.setItem('ui_isDesktopSidebarOpen', String(next));
+                  } catch {}
                 } else {
                   setMobileSidebarOpen(true);
                 }
               }}
+              aria-label="Toggle sidebar"
             >
-                <Menu className="w-6 h-6"/>
+              <Menu className="h-5 w-5" />
             </button>
-            <h2 className="text-xl font-bold text-slate-800 capitalize">
-              {t(viewTitles[currentView])}
-            </h2>
+            <div>
+              <h1 className="text-lg font-semibold text-slate-800 sm:text-xl">{viewTitles[currentView]}</h1>
+              <p className="hidden text-xs text-slate-500 sm:block">Pantau aktivitas dan kelola operasional Pickpoint</p>
+            </div>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="text-sm text-slate-500 hidden md:block">
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <button
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow transition-all hover:bg-blue-700 sm:px-4 sm:text-sm"
+              onClick={() => setCurrentView('DASHBOARD')}
+              aria-label="Quick Add"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Tambah Data</span>
+            </button>
+            <div className="relative">
+              <button
+                className="relative rounded-full p-2 transition-colors hover:bg-slate-100"
+                aria-label="Notifications"
+                onClick={() => setShowNotif(v => !v)}
+              >
+                <span className="absolute right-1 top-1 h-2 w-2 rounded-full border-2 border-white bg-red-500" />
+                <svg className="h-5 w-5 text-slate-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </button>
+              {showNotif && (
+                <div className="absolute right-0 mt-2 w-72 rounded-lg border border-slate-200 bg-white shadow-lg">
+                  <div className="border-b border-slate-100 px-4 py-3 text-sm font-bold text-slate-800">Notifikasi</div>
+                  <div className="px-4 py-3 text-sm text-slate-600">Belum ada notifikasi baru.</div>
+                </div>
+              )}
+            </div>
+            <div className="relative">
+              <button
+                className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 transition-colors hover:bg-slate-100"
+                onClick={() => setShowUserMenu(v => !v)}
+                aria-label="User menu"
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-700 text-sm font-bold text-white">
+                  {user.name.charAt(0)}
+                </div>
+                <span className="hidden text-sm font-medium text-slate-800 sm:block">{user.name}</span>
+              </button>
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-48 rounded-lg border border-slate-200 bg-white shadow-lg">
+                  <div className="border-b border-slate-100 px-4 py-3">
+                    <p className="text-sm font-bold text-slate-800">{user.name}</p>
+                    <p className="text-xs capitalize text-slate-500">{user.role}</p>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-500 transition-colors hover:bg-red-50"
+                  >
+                    <LogOut className="h-4 w-4" /> Keluar
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
-
-        <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
+        <div className="mx-auto max-w-7xl p-2 sm:p-4 md:p-8">
           {currentView === 'DASHBOARD' && <Dashboard user={user} />}
           {currentView === 'REPORTS' && <Reports />}
           {currentView === 'LOCATIONS' && isAdmin && <Locations />}
@@ -222,4 +270,3 @@ const AdminApp: React.FC = () => {
 };
 
 export default AdminApp;
-
