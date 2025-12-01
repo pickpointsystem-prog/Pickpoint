@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+// Backend temporarily disabled: provide a safe no-op SupabaseService
+// so the app can run without a configured backend while we rebuild it cleanly.
 import { ActivityLog, AppSettings, Customer, Location, Package, User } from '../types';
 
 interface SupabasePayload {
@@ -10,41 +11,17 @@ interface SupabasePayload {
   settings?: AppSettings;
 }
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-let client: SupabaseClient | null = null;
-if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-  client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
-
 export const SupabaseService = {
-  isReady: () => !!client,
-  upsertTable: async <T>(table: string, payload: T[]): Promise<void> => {
-    if (!client) return;
-    await client.from(table).upsert(payload);
+  isReady: () => false,
+  upsertTable: async <T>(_table: string, _payload: T[]): Promise<void> => {
+    // no-op
+    return;
   },
   fetchAllData: async (): Promise<SupabasePayload | null> => {
-    if (!client) return null;
-    const [users, locations, packages, customers, activities, settings] = await Promise.all([
-      client.from('users').select('*'),
-      client.from('locations').select('*'),
-      client.from('packages').select('*'),
-      client.from('customers').select('*'),
-      client.from('activities').select('*'),
-      client.from('settings').select('*').single()
-    ]);
-    return {
-      users: users.data || [],
-      locations: locations.data || [],
-      packages: packages.data || [],
-      customers: customers.data || [],
-      activities: activities.data || [],
-      settings: settings.data || undefined
-    };
+    return null; // backend disabled
   },
-  insertActivity: async (activity: ActivityLog): Promise<void> => {
-    if (!client) return;
-    await client.from('activities').insert(activity);
+  insertActivity: async (_activity: ActivityLog): Promise<void> => {
+    // no-op
+    return;
   }
 };

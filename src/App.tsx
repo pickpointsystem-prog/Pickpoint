@@ -18,7 +18,7 @@ if (config.enableDebugMode) {
   );
 }
 
-const isDashboardDomain = window.location.hostname === config.dashboardDomain;
+const isDashboardDomain = window.location.hostname === config.dashboardDomain || window.location.hostname === 'localhost';
 
 const App: React.FC = () => {
   return (

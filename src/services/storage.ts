@@ -2,6 +2,7 @@ import { User, Location, Package, Customer, AppSettings, ActivityLog } from '../
 import { INITIAL_USERS, INITIAL_LOCATIONS, INITIAL_SETTINGS, SEED_KEYS, INITIAL_CUSTOMERS } from '../constants';
 import config from '../config/environment';
 import { SupabaseService } from './supabase';
+import { ApiService } from './api';
 
 // Add environment prefix to storage keys
 const prefixKey = (key: string): string => `${config.storagePrefix}${key}`;
@@ -181,7 +182,35 @@ export const StorageService = {
   // Manual full sync to Supabase (one-click seed)
   syncAllToSupabase: async () => {
     if (!SupabaseService.isReady()) {
-      return { ok: false, message: 'Supabase not configured' };
+      // Use new API endpoints to seed data when available
+      const users = get<User[]>(SEED_KEYS.USERS, []);
+      const locations = get<Location[]>(SEED_KEYS.LOCATIONS, []);
+      const packages = get<Package[]>(SEED_KEYS.PACKAGES, []);
+      const customers = get<Customer[]>(SEED_KEYS.CUSTOMERS, []);
+      const activities = get<ActivityLog[]>(SEED_KEYS.ACTIVITIES, []);
+      const settings = get<AppSettings>(SEED_KEYS.SETTINGS, INITIAL_SETTINGS);
+
+      try {
+        await ApiService.post('locations', locations);
+        await ApiService.post('users', users);
+        await ApiService.post('packages', packages);
+        await ApiService.post('customers', customers);
+        await ApiService.post('activities', activities);
+        await ApiService.post('settings', settings);
+        return {
+          ok: true,
+          counts: {
+            locations: locations.length,
+            users: users.length,
+            packages: packages.length,
+            customers: customers.length,
+            activities: activities.length,
+            settings: 1,
+          }
+        };
+      } catch (e) {
+        return { ok: false, message: 'Sync failed' };
+      }
     }
     const users = get<User[]>(SEED_KEYS.USERS, []);
     const locations = get<Location[]>(SEED_KEYS.LOCATIONS, []);
