@@ -17,6 +17,13 @@ let client: SupabaseClient | null = null;
 
 if (SUPABASE_URL && SUPABASE_ANON_KEY) {
   client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.log('✅ Supabase client initialized:', SUPABASE_URL);
+} else {
+  console.error('❌ Supabase environment variables missing!', {
+    hasUrl: !!SUPABASE_URL,
+    hasKey: !!SUPABASE_ANON_KEY,
+    env: import.meta.env.VITE_APP_ENV || 'unknown'
+  });
 }
 
 // Transform helpers for camelCase <-> snake_case
