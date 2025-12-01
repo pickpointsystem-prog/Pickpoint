@@ -2,7 +2,6 @@ import { User, Location, Package, Customer, AppSettings, ActivityLog } from '../
 import { INITIAL_USERS, INITIAL_LOCATIONS, INITIAL_SETTINGS, SEED_KEYS, INITIAL_CUSTOMERS } from '../constants';
 import config from '../config/environment';
 import { SupabaseService } from './supabase';
-import { ApiService } from './api';
 
 // Add environment prefix to storage keys
 const prefixKey = (key: string): string => `${config.storagePrefix}${key}`;
@@ -30,7 +29,7 @@ function set(key: string, value: any) {
 
 type SupabaseTableKey = 'users' | 'locations' | 'packages' | 'customers' | 'settings' | 'activities';
 
-const syncToSupabase = <T>(table: SupabaseTableKey, payload: T[]) => {
+const syncToSupabase = <T extends Record<string, any>>(table: SupabaseTableKey, payload: T[]) => {
   if (!SupabaseService.isReady() || payload.length === 0) return;
   SupabaseService.upsertTable(table, payload);
 };
