@@ -182,36 +182,9 @@ export const StorageService = {
   // Manual full sync to Supabase (one-click seed)
   syncAllToSupabase: async () => {
     if (!SupabaseService.isReady()) {
-      // Use new API endpoints to seed data when available
-      const users = get<User[]>(SEED_KEYS.USERS, []);
-      const locations = get<Location[]>(SEED_KEYS.LOCATIONS, []);
-      const packages = get<Package[]>(SEED_KEYS.PACKAGES, []);
-      const customers = get<Customer[]>(SEED_KEYS.CUSTOMERS, []);
-      const activities = get<ActivityLog[]>(SEED_KEYS.ACTIVITIES, []);
-      const settings = get<AppSettings>(SEED_KEYS.SETTINGS, INITIAL_SETTINGS);
-
-      try {
-        await ApiService.post('locations', locations);
-        await ApiService.post('users', users);
-        await ApiService.post('packages', packages);
-        await ApiService.post('customers', customers);
-        await ApiService.post('activities', activities);
-        await ApiService.post('settings', settings);
-        return {
-          ok: true,
-          counts: {
-            locations: locations.length,
-            users: users.length,
-            packages: packages.length,
-            customers: customers.length,
-            activities: activities.length,
-            settings: 1,
-          }
-        };
-      } catch (e) {
-        return { ok: false, message: 'Sync failed' };
-      }
+      return { ok: false, message: 'Supabase not configured' };
     }
+
     const users = get<User[]>(SEED_KEYS.USERS, []);
     const locations = get<Location[]>(SEED_KEYS.LOCATIONS, []);
     const packages = get<Package[]>(SEED_KEYS.PACKAGES, []);
@@ -220,12 +193,19 @@ export const StorageService = {
     const settings = get<AppSettings>(SEED_KEYS.SETTINGS, INITIAL_SETTINGS);
 
     try {
-      await SupabaseService.upsertTable('locations', locations);
-      await SupabaseService.upsertTable('users', users);
-      await SupabaseService.upsertTable('packages', packages);
-      await SupabaseService.upsertTable('customers', customers);
-      await SupabaseService.upsertTable('activities', activities);
-      await SupabaseService.upsertTable('settings', [settings]);
+      const results = await Promise.all([
+        SupabaseService.upsertTable('locations', locations),
+        SupabaseService.upsertTable('users', users),
+        SupabaseService.upsertTable('packages', packages),
+        SupabaseService.upsertTable('customers', customers),
+        SupabaseService.upsertTable('activities', activities),
+        SupabaseService.upsertTable('settings', [settings]),
+      ]);
+
+      const failed = results.filter(r => !r.success);
+      if (failed.length > 0) {
+        return { ok: false, message: `${failed.length} table(s) failed to sync` };
+      }
 
       return {
         ok: true,
@@ -238,8 +218,8 @@ export const StorageService = {
           settings: 1,
         }
       };
-    } catch (e) {
-      return { ok: false, message: 'Sync failed' };
+    } catch (e: any) {
+      return { ok: false, message: e.message || 'Sync failed' };
     }
   },
 };

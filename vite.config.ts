@@ -12,6 +12,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api\/wa/, ''),
         secure: false
+      },
+      '/api': {
+        target: 'http://localhost:3000', // vercel dev default port
+        changeOrigin: true,
+        secure: false
       }
     }
   },
