@@ -5,9 +5,10 @@ import { StorageService } from '../services/storage';
 import { PricingService } from '../services/pricing';
 import { COURIER_OPTIONS } from '../constants';
 import { WhatsAppService } from '../services/whatsapp';
-import { Search, Plus, QrCode, X, Truck, MessageCircle, Trash2, Camera, CheckCircle, Package as PackageIcon } from 'lucide-react';
+import { Search, Plus, QrCode, X, Truck, MessageCircle, Trash2, Camera, CheckCircle, Package as PackageIcon, Scan } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import BarcodeScanner from './BarcodeScanner';
+import QRScanner from './QRScanner';
 
 interface PackagesProps {
   user: User;
@@ -21,6 +22,7 @@ const Packages: React.FC<PackagesProps> = ({ user }) => {
   const [search, setSearch] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const [selectedPkg, setSelectedPkg] = useState<Package | null>(null);
   
   // Data for Form
@@ -185,9 +187,14 @@ const Packages: React.FC<PackagesProps> = ({ user }) => {
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm">
-            <Plus className="w-4 h-4" /> Receive Package
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setIsQRScannerOpen(true)} className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm">
+              <Scan className="w-4 h-4" /> Scan QR
+            </button>
+            <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm">
+              <Plus className="w-4 h-4" /> Receive Package
+            </button>
+          </div>
         </div>
       </div>
 
@@ -422,6 +429,9 @@ const Packages: React.FC<PackagesProps> = ({ user }) => {
         onClose={() => setIsScannerOpen(false)}
         onScan={handleScan}
       />
+      {isQRScannerOpen && (
+        <QRScanner onClose={() => { setIsQRScannerOpen(false); loadData(); }} />
+      )}
     </div>
   );
 };

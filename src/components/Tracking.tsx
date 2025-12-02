@@ -1,16 +1,19 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { StorageService } from '../services/storage';
 import { PricingService } from '../services/pricing';
 import { Package, Location } from '../types';
-import { Search, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Search, Clock, CheckCircle, AlertTriangle, QrCode } from 'lucide-react';
+import QRCodeLib from 'qrcode';
 
 const Tracking: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('id') || '');
   const [result, setResult] = useState<{pkg: Package, loc: Location, fee: number} | null>(null);
   const [error, setError] = useState('');
+  const [showQR, setShowQR] = useState(false);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Auto-search on load if param exists
   useEffect(() => {
@@ -19,6 +22,29 @@ const Tracking: React.FC = () => {
       handleSearch(id);
     }
   }, [searchParams]);
+
+  // Generate QR Code when result changes and QR is shown
+  useEffect(() => {
+    if (result && showQR && qrCanvasRef.current) {
+      const qrData = JSON.stringify({
+        id: result.pkg.id,
+        tracking: result.pkg.trackingNumber,
+        name: result.pkg.recipientName,
+        phone: result.pkg.recipientPhone,
+        pickupCode: result.pkg.pickupCode,
+        location: result.loc.name
+      });
+      
+      QRCodeLib.toCanvas(qrCanvasRef.current, qrData, {
+        width: 280,
+        margin: 2,
+        color: {
+          dark: '#1e293b',
+          light: '#ffffff'
+        }
+      });
+    }
+  }, [result, showQR]);
 
   const handleSearch = (trackingId: string) => {
     const trimmed = trackingId.trim();
@@ -54,6 +80,9 @@ const Tracking: React.FC = () => {
     }
   };
 
+  // Auto-show detail dari URL tanpa search field
+  const isDirectLink = searchParams.get('id') && !error && result;
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
       <div className="w-full sm:max-w-md">
@@ -66,20 +95,24 @@ const Tracking: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-          <div className="p-2 border-b border-slate-100 flex gap-2">
-            <input 
-              className="w-full px-4 py-3 outline-none text-slate-700 font-medium"
-              placeholder="e.g. JNE123456789"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
-            <button 
-              onClick={() => handleSearch(query)}
-              className="bg-slate-900 text-white p-3 rounded-xl hover:bg-black transition-colors"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-          </div>
+          {/* Search field - Hidden jika direct link dan ada result */}
+          {!isDirectLink && (
+            <div className="p-2 border-b border-slate-100 flex gap-2">
+              <input 
+                className="w-full px-4 py-3 outline-none text-slate-700 font-medium"
+                placeholder="e.g. JNE123456789"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                onKeyPress={e => e.key === 'Enter' && handleSearch(query)}
+              />
+              <button 
+                onClick={() => handleSearch(query)}
+                className="bg-slate-900 text-white p-3 rounded-xl hover:bg-black transition-colors"
+              >
+                <Search className="w-5 h-5" />
+              </button>
+            </div>
+          )}
 
           {error && (
             <div className="p-8 text-center">
@@ -124,13 +157,43 @@ const Tracking: React.FC = () => {
 
                  {/* Fees */}
                  {result.pkg.status === 'ARRIVED' && (
-                   <div className="border border-orange-200 bg-orange-50 rounded-xl p-4 flex justify-between items-center">
-                      <div>
-                        <p className="text-xs font-bold text-orange-800 uppercase">Current Fee</p>
-                        <p className="text-[10px] text-orange-600">Pay at cashier</p>
-                      </div>
-                      <p className="text-2xl font-bold text-orange-600">Rp {result.fee.toLocaleString()}</p>
-                   </div>
+                   <>
+                     <div className="border border-orange-200 bg-orange-50 rounded-xl p-4 flex justify-between items-center">
+                        <div>
+                          <p className="text-xs font-bold text-orange-800 uppercase">Current Fee</p>
+                          <p className="text-[10px] text-orange-600">Pay at cashier</p>
+                        </div>
+                        <p className="text-2xl font-bold text-orange-600">Rp {result.fee.toLocaleString()}</p>
+                     </div>
+
+                     {/* QR Code Button */}
+                     <button
+                       onClick={() => setShowQR(!showQR)}
+                       className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200"
+                     >
+                       <QrCode className="w-5 h-5" />
+                       {showQR ? 'Sembunyikan QR Code' : 'Tampilkan QR Code untuk Scan'}
+                     </button>
+
+                     {/* QR Code Display */}
+                     {showQR && (
+                       <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 text-center border-2 border-slate-200">
+                         <h3 className="font-bold text-slate-800 mb-2">Scan QR di Petugas</h3>
+                         <p className="text-xs text-slate-500 mb-4">
+                           Tunjukkan QR ini ke petugas untuk verifikasi cepat
+                         </p>
+                         <div className="bg-white p-4 rounded-xl inline-block shadow-md">
+                           <canvas ref={qrCanvasRef}></canvas>
+                         </div>
+                         <div className="mt-4 bg-white rounded-lg p-3 border border-slate-200">
+                           <p className="text-xs text-slate-500 uppercase font-bold mb-1">Pickup Code</p>
+                           <p className="text-2xl font-mono font-bold text-blue-600 tracking-wider">
+                             {result.pkg.pickupCode || result.pkg.trackingNumber}
+                           </p>
+                         </div>
+                       </div>
+                     )}
+                   </>
                  )}
 
                  {/* Timeline */}
