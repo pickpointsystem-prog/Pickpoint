@@ -49,33 +49,66 @@ const Html5OmniScanner: React.FC<Html5OmniScannerProps> = ({ isOpen, onClose, on
     try {
       setError('');
       setStarting(true);
-      if (!instanceRef.current) {
-        instanceRef.current = new Html5Qrcode(containerId.current);
+      
+      // Cleanup any existing instance first
+      if (instanceRef.current) {
+        try {
+          if (instanceRef.current.isScanning) {
+            await instanceRef.current.stop();
+          }
+          await instanceRef.current.clear();
+        } catch (e) {
+          console.warn('[Html5OmniScanner] cleanup warning:', e);
+        }
+        instanceRef.current = null;
       }
 
+      // Create fresh instance
+      instanceRef.current = new Html5Qrcode(containerId.current, { verbose: false });
+
       const cameras = await Html5Qrcode.getCameras();
+      console.log('[Html5OmniScanner] Available cameras:', cameras);
+      
       const backCamera = cameras.find(c => /back|rear|environment/i.test(c.label));
       const cameraId = backCamera?.id || cameras[0]?.id;
       if (!cameraId) throw new Error('Tidak ada kamera tersedia');
 
+      console.log('[Html5OmniScanner] Using camera:', backCamera?.label || cameras[0]?.label);
+
       const config: Html5QrcodeCameraScanConfig = {
-        fps: 12,
+        fps: 20,
+        qrbox: qrbox || ((vw, vh) => {
+          const size = Math.floor(Math.min(vw, vh) * 0.7);
+          console.log('[Html5OmniScanner] QR box size:', size);
+          return size;
+        }),
         aspectRatio: 1.7778,
-        qrbox: qrbox || ((vw, vh) => Math.floor(Math.min(vw, vh) * 0.7)),
+        disableFlip: false,
         formatsToSupport: formats,
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true
-        }
+        },
+        showTorchButtonIfSupported: true
       } as any;
 
-      await instanceRef.current.start({ deviceId: { exact: cameraId } }, config, (decodedText) => {
-        try {
-          onScan(decodedText);
-        } finally {
-          stopScanner();
-          onClose();
+      await instanceRef.current.start(
+        { deviceId: { exact: cameraId } }, 
+        config, 
+        (decodedText) => {
+          console.log('[Html5OmniScanner] Scan success:', decodedText);
+          try {
+            onScan(decodedText);
+          } finally {
+            stopScanner();
+            onClose();
+          }
+        }, 
+        () => {
+          // Scan errors are normal during scanning, don't log them
         }
-      }, () => {});
+      );
+      
+      console.log('[Html5OmniScanner] Scanner started successfully');
     } catch (e: any) {
       console.error('[Html5OmniScanner] start error:', e);
       setError(e?.message || 'Gagal membuka kamera');
@@ -87,13 +120,23 @@ const Html5OmniScanner: React.FC<Html5OmniScannerProps> = ({ isOpen, onClose, on
   const stopScanner = async () => {
     try {
       if (instanceRef.current) {
-        if (instanceRef.current.isScanning) {
+        const isScanning = instanceRef.current.isScanning;
+        console.log('[Html5OmniScanner] Stopping scanner, isScanning:', isScanning);
+        
+        if (isScanning) {
           await instanceRef.current.stop();
         }
+        
+        // Give it a moment before clearing
+        await new Promise(resolve => setTimeout(resolve, 100));
         await instanceRef.current.clear();
+        
+        instanceRef.current = null;
+        console.log('[Html5OmniScanner] Scanner stopped and cleared');
       }
     } catch (e) {
       console.warn('[Html5OmniScanner] stop error:', e);
+      instanceRef.current = null;
     }
   };
 

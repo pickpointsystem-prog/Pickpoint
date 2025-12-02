@@ -4,19 +4,20 @@ import { StorageService } from '../services/storage';
 import { PricingService } from '../services/pricing';
 import { WhatsAppService } from '../services/whatsapp';
 import { COURIER_OPTIONS } from '../constants';
-import { realtimeService } from '../services/realtime';
+// import { realtimeService } from '../services/realtime';
 import { 
   Package as PackageIcon, DollarSign, Users, Activity, 
   ArrowUpRight, ArrowDownRight, Search, Plus, 
-  QrCode, X, Truck, MessageCircle, Trash2, Camera, Lock,
+  /* QrCode, */ X, Truck, MessageCircle, Trash2, Camera, Lock,
   PackageCheck, Loader2, Wallet, ZoomIn, ZoomOut, Scan
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 // import QRScanner from './QRScanner';
 // import BarcodeScanner from './BarcodeScanner';
-import Html5OmniScanner from './Html5OmniScanner';
-import { useToast } from '../context/ToastContext';
-import BackgroundScanner from './BackgroundScanner';
+// import Html5OmniScanner from './Html5OmniScanner';
+// import { useToast } from '../context/ToastContext';
+// import BackgroundScanner from './BackgroundScanner';
+import SimpleScanner from './SimpleScanner';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
@@ -95,7 +96,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => {
-  const { showToast } = useToast();
+  // const { showToast } = useToast();
     // State untuk expand/collapse KPI
     const [kpiExpanded, setKpiExpanded] = useState(true);
   // --- STATE: DASHBOARD & PACKAGES ---
@@ -119,7 +120,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
   const [isPhotoVisible, setIsPhotoVisible] = useState(false);
   
   // Background scanning for dashboard QR detection
-  const dashboardScanEnabled = user.role === 'STAFF';
+  // const dashboardScanEnabled = user.role === 'STAFF';
   // const [preScannedQR, setPreScannedQR] = useState<string>('');
 
   // Form Data
@@ -174,21 +175,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
   }, [openAddModal]);
 
   // Listen for realtime events from other devices (mobile scan → desktop popup)
-  useEffect(() => {
+  /* useEffect(() => {
     const unsubscribe = realtimeService.on('QR_SCANNED', (qrData: string) => {
       console.log('[Dashboard] Received QR_SCANNED from mobile:', qrData);
       setIsQRScannerOpen(true);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, []); */
 
   // Handler untuk QR customer terdeteksi - auto-open QR Scanner modal
-  const handleQRDetected = (data: string) => {
+  /* const handleQRDetected = (data: string) => {
     console.log('[Dashboard] Customer QR detected, auto-opening scanner:', data);
     // removed: preScannedQR handling; using modal open directly
     setIsQRScannerOpen(true);
-  };
+  }; */
 
   const calculateStats = (allPkgs: Package[], allCusts: Customer[]) => {
     const relevantPkgs = user.role === 'STAFF'
@@ -902,7 +903,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
                   <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Nomor Resi / AWB <span className="text-red-500">*</span></label>
                   <div className="flex gap-2">
                     <input required autoFocus className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.tracking} onChange={e => setFormData({...formData, tracking: e.target.value})} placeholder="Scan atau ketik nomor resi..." aria-label="Nomor Resi" />
-                    <button type="button" onClick={() => setIsBarcodeScannerOpen(true)} className="p-2.5 bg-slate-100 rounded-lg hover:bg-slate-200 text-slate-600" aria-label="Scan QR"><QrCode className="w-5 h-5" /></button>
+                    <button type="button" onClick={() => setIsBarcodeScannerOpen(true)} className="p-2.5 bg-slate-100 rounded-lg hover:bg-slate-200 text-slate-600" aria-label="Scan"><Camera className="w-5 h-5" /></button>
                   </div>
                 </div>
                 {getSelectedLocation()?.pricing.type === 'SIZE' && (
@@ -1029,53 +1030,45 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
         </div>
       )}
 
-      {/* 1b. Barcode Scanner Modal for AWB (html5-qrcode) */}
-      {isBarcodeScannerOpen && (
-        <Html5OmniScanner
-          isOpen={isBarcodeScannerOpen}
-          onClose={() => setIsBarcodeScannerOpen(false)}
-          onScan={(code) => {
-            setFormData(prev => ({ ...prev, tracking: code }));
-            setIsBarcodeScannerOpen(false);
-          }}
-        />
-      )}
+      {/* 1b. Barcode Scanner Modal for AWB */}
+      <SimpleScanner
+        isOpen={isBarcodeScannerOpen}
+        onClose={() => setIsBarcodeScannerOpen(false)}
+        onScan={(code) => {
+          setFormData(prev => ({ ...prev, tracking: code }));
+          setIsBarcodeScannerOpen(false);
+        }}
+        title="Scan AWB / Barcode"
+      />
 
-      {/* 1c. QR Scanner Modal for Pickup (html5-qrcode) */}
-      {isQRScannerOpen && (
-        <Html5OmniScanner
-          isOpen={isQRScannerOpen}
-          onClose={() => { 
-            setIsQRScannerOpen(false);
-            loadData();
-          }}
-          onScan={(text) => {
-            // Coba cari paket berdasarkan isi QR/barcode
-            const code = (text || '').trim();
-            if (!code) return;
-            const lower = code.toLowerCase();
-            // Cari yang status ARRIVED di lokasi staff (kalau staff)
-            const candidatePkgs = packages.filter(p => {
-              const matches = p.trackingNumber.toLowerCase() === lower ||
-                p.trackingNumber.toLowerCase().includes(lower) ||
-                p.recipientPhone === code ||
-                p.recipientName.toLowerCase().includes(lower);
-              const locationOk = user.role === 'STAFF' ? p.locationId === user.locationId : true;
-              return matches && locationOk && p.status === 'ARRIVED';
-            });
-            if (candidatePkgs.length > 0) {
-              setSelectedPkg(candidatePkgs[0]);
-            } else {
-              showToast?.('Paket tidak ditemukan untuk kode: ' + code);
-            }
-          }}
-        />
-      )}
-
-      {/* Dashboard-wide Background Scanner for QR customer detection */}
-      <BackgroundScanner
-        enabled={dashboardScanEnabled && !isQRScannerOpen}
-        onQRDetected={handleQRDetected}
+      {/* 1c. QR Scanner Modal for Pickup */}
+      <SimpleScanner
+        isOpen={isQRScannerOpen}
+        onClose={() => setIsQRScannerOpen(false)}
+        onScan={(text) => {
+          // Cari paket berdasarkan hasil scan
+          const code = (text || '').trim();
+          if (!code) return;
+          const lower = code.toLowerCase();
+          
+          const candidatePkgs = packages.filter(p => {
+            const matches = p.trackingNumber.toLowerCase() === lower ||
+              p.trackingNumber.toLowerCase().includes(lower) ||
+              p.recipientPhone === code ||
+              p.recipientName.toLowerCase().includes(lower);
+            const locationOk = user.role === 'STAFF' ? p.locationId === user.locationId : true;
+            return matches && locationOk && p.status === 'ARRIVED';
+          });
+          
+          if (candidatePkgs.length > 0) {
+            setSelectedPkg(candidatePkgs[0]);
+          } else {
+            alert('Paket tidak ditemukan untuk kode: ' + code);
+          }
+          setIsQRScannerOpen(false);
+          loadData();
+        }}
+        title="Scan QR Pickup"
       />
 
       {/* 2. DETAIL & ACTION MODAL */}

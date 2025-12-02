@@ -4,7 +4,7 @@ import { StorageService } from '../services/storage';
 import { WhatsAppService } from '../services/whatsapp';
 import { COURIER_OPTIONS } from '../constants';
 import { X, Camera, Scan } from 'lucide-react';
-import Html5OmniScanner from './Html5OmniScanner';
+import SimpleScanner from './SimpleScanner';
 
 interface MobileAddPackageProps {
   user: User;
@@ -140,63 +140,9 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
   };
 
   const startCamera = async () => {
-    try {
-      // Stop any previous stream to avoid black screen
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(t => t.stop());
-        streamRef.current = null;
-      }
-      let stream: MediaStream | null = null;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          audio: false 
-        });
-      } catch (err) {
-        console.warn('[MobileAddPackage] Environment camera failed, trying any camera:', err);
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      }
-      
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.setAttribute('playsinline', 'true');
-        videoRef.current.setAttribute('webkit-playsinline', 'true');
-        await new Promise<void>((resolve) => {
-          const onReady = () => {
-            videoRef.current?.removeEventListener('loadedmetadata', onReady);
-            resolve();
-          };
-          videoRef.current?.addEventListener('loadedmetadata', onReady);
-        });
-        try {
-          await videoRef.current.play();
-        } catch (e) {
-          console.warn('[MobileAddPackage] video.play() failed, retrying:', e);
-          setTimeout(() => { videoRef.current?.play().catch(()=>{}); }, 100);
-        }
-        // If dimensions are zero, retry once with basic constraints
-        if ((videoRef.current.videoWidth || 0) === 0) {
-          console.warn('[MobileAddPackage] videoWidth=0, retry getUserMedia with basic constraints');
-          try {
-            const fallback = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-            streamRef.current = fallback;
-            videoRef.current.srcObject = fallback;
-            await videoRef.current.play();
-          } catch (e2) {
-            console.warn('[MobileAddPackage] fallback getUserMedia failed:', e2);
-          }
-        }
-      }
-      setIsTakingPhoto(true);
-    } catch (err) {
-      alert('Tidak dapat mengakses kamera');
-      console.error('[MobileAddPackage] Camera error:', err);
-    }
+    alert('Fitur kamera sedang dalam perbaikan');
+    return;
+    // Camera code temporarily disabled
   };
 
   const capturePhoto = () => {
@@ -413,17 +359,16 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
         </button>
       </div>
 
-      {/* Barcode Scanner - html5-qrcode */}
-      {isBarcodeScannerOpen && (
-        <Html5OmniScanner
-          isOpen={isBarcodeScannerOpen}
-          onClose={() => setIsBarcodeScannerOpen(false)}
-          onScan={(code) => {
-            setFormData(prev => ({ ...prev, tracking: code }));
-            setIsBarcodeScannerOpen(false);
-          }}
-        />
-      )}
+      {/* Barcode Scanner */}
+      <SimpleScanner
+        isOpen={isBarcodeScannerOpen}
+        onClose={() => setIsBarcodeScannerOpen(false)}
+        onScan={(code) => {
+          setFormData(prev => ({ ...prev, tracking: code }));
+          setIsBarcodeScannerOpen(false);
+        }}
+        title="Scan AWB / Barcode"
+      />
     </div>
   );
 };
