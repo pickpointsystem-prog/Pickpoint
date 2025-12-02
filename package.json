@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.41.0",
+    "@zxing/library": "^0.21.3",
     "clsx": "^2.1.0",
     "html5-qrcode": "^2.3.8",
     "jsqr": "^1.4.0",

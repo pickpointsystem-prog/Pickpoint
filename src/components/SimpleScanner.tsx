@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 import { X, Camera } from 'lucide-react';
 
 interface SimpleScannerProps {
@@ -10,8 +10,8 @@ interface SimpleScannerProps {
 }
 
 /**
- * SimpleScanner - Scanner sederhana menggunakan html5-qrcode
- * Support QR code dan barcode umum (CODE128, EAN13, dll)
+ * SimpleScanner - Scanner menggunakan @zxing/library
+ * Support QR code dan barcode umum (CODE128, EAN13, UPC, dll)
  */
 const SimpleScanner: React.FC<SimpleScannerProps> = ({ 
   isOpen, 
@@ -19,9 +19,10 @@ const SimpleScanner: React.FC<SimpleScannerProps> = ({
   onScan,
   title = 'Scan Kode'
 }) => {
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const [error, setError] = useState<string>('');
-  const scannerId = 'simple-scanner-reader';
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -36,48 +37,59 @@ const SimpleScanner: React.FC<SimpleScannerProps> = ({
     };
   }, [isOpen]);
 
-  const startScanner = () => {
+  const startScanner = async () => {
     try {
       setError('');
+      setScanning(true);
       
-      // Buat scanner dengan config sederhana
-      scannerRef.current = new Html5QrcodeScanner(
-        scannerId,
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-          showTorchButtonIfSupported: true,
-          showZoomSliderIfSupported: true,
-          defaultZoomValueIfSupported: 2,
-        },
-        /* verbose= */ false
-      );
+      // Buat instance ZXing reader
+      codeReaderRef.current = new BrowserMultiFormatReader();
+      
+      // Get video devices
+      const videoDevices = await codeReaderRef.current.listVideoInputDevices();
+      
+      if (videoDevices.length === 0) {
+        throw new Error('Tidak ada kamera tersedia');
+      }
 
-      // Render scanner
-      scannerRef.current.render(
-        (decodedText) => {
-          console.log('[SimpleScanner] Decoded:', decodedText);
-          onScan(decodedText);
-          cleanup();
-          onClose();
-        },
-        () => {
-          // Scan error - normal saat scanning, tidak perlu log
-        }
+      // Pilih kamera belakang jika ada
+      const backCamera = videoDevices.find(device => 
+        /back|rear|environment/i.test(device.label)
       );
+      const selectedDeviceId = backCamera?.deviceId || videoDevices[0].deviceId;
+
+      // Start decoding dari video element
+      if (videoRef.current) {
+        await codeReaderRef.current.decodeFromVideoDevice(
+          selectedDeviceId,
+          videoRef.current,
+          (result, error) => {
+            if (result) {
+              console.log('[SimpleScanner] Decoded:', result.getText());
+              onScan(result.getText());
+              cleanup();
+              onClose();
+            }
+            if (error && !(error instanceof NotFoundException)) {
+              console.warn('[SimpleScanner] Decode error:', error);
+            }
+          }
+        );
+      }
     } catch (e: any) {
       console.error('[SimpleScanner] Error:', e);
       setError('Gagal memulai scanner: ' + (e?.message || 'Unknown error'));
+      setScanning(false);
     }
   };
 
-  const cleanup = async () => {
+  const cleanup = () => {
     try {
-      if (scannerRef.current) {
-        await scannerRef.current.clear();
-        scannerRef.current = null;
+      if (codeReaderRef.current) {
+        codeReaderRef.current.reset();
+        codeReaderRef.current = null;
       }
+      setScanning(false);
     } catch (e) {
       console.warn('[SimpleScanner] Cleanup error:', e);
     }
@@ -119,9 +131,22 @@ const SimpleScanner: React.FC<SimpleScannerProps> = ({
 
         {/* Scanner Container */}
         <div className="p-4">
-          <div id={scannerId} className="w-full" />
+          <div className="relative bg-slate-900 rounded-xl overflow-hidden aspect-video mb-4">
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              autoPlay
+              playsInline
+              muted
+            />
+            {scanning && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-48 h-48 border-4 border-blue-500 rounded-2xl animate-pulse"></div>
+              </div>
+            )}
+          </div>
           
-          <div className="mt-4 text-center">
+          <div className="text-center">
             <p className="text-xs text-slate-500">
               Arahkan kamera ke QR code atau barcode
             </p>

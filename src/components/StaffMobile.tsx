@@ -3,7 +3,7 @@ import { User } from '../types';
 import { PackagePlus, QrCode } from 'lucide-react';
 import SimpleScanner from './SimpleScanner';
 import MobileAddPackage from './MobileAddPackage';
-// import { realtimeService } from '../services/realtime';
+import { realtimeService } from '../services/realtime';
 
 interface StaffMobileProps {
   user: User;
@@ -96,7 +96,9 @@ const StaffMobile: React.FC<StaffMobileProps> = ({ user }) => {
         onClose={() => setIsQRScannerOpen(false)}
         onScan={(text) => {
           console.log('[StaffMobile] QR Scanned:', text);
-          alert('QR berhasil di-scan: ' + text);
+          // Broadcast ke desktop untuk membuka popup
+          realtimeService.broadcast('QR_SCANNED', text);
+          alert('QR berhasil di-scan. Cek di desktop untuk proses pickup.');
           setIsQRScannerOpen(false);
         }}
         title="Scan QR Pickup"

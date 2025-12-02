@@ -140,22 +140,55 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
   };
 
   const startCamera = async () => {
-    alert('Fitur kamera sedang dalam perbaikan');
-    return;
-    // Camera code temporarily disabled
+    try {
+      // Stop any previous stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
+
+      let stream: MediaStream | null = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false 
+        });
+      } catch (err) {
+        console.warn('[MobileAddPackage] Environment camera failed, trying any camera:', err);
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
+      
+      streamRef.current = stream;
+      if (videoRef.current && stream) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true');
+        await videoRef.current.play();
+      }
+      setIsTakingPhoto(true);
+    } catch (err) {
+      alert('Tidak dapat mengakses kamera');
+      console.error('[MobileAddPackage] Camera error:', err);
+    }
   };
 
   const capturePhoto = () => {
     if (!videoRef.current) return;
     
+    const video = videoRef.current;
     const canvas = document.createElement('canvas');
-    const vw = videoRef.current.videoWidth || 1280;
-    const vh = videoRef.current.videoHeight || 720;
+    const vw = video.videoWidth || 1280;
+    const vh = video.videoHeight || 720;
+    
     canvas.width = vw;
     canvas.height = vh;
+    
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      ctx.drawImage(videoRef.current, 0, 0);
+      ctx.drawImage(video, 0, 0, vw, vh);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
       setFormData(prev => ({ ...prev, photo: dataUrl }));
       stopCamera();
