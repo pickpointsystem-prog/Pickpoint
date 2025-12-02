@@ -39,6 +39,21 @@ npm run dev
 - **Username:** `admin`
 - **Password:** `admin123`
 
+## 📱 Akses Aplikasi
+
+### Desktop (Admin & Staff)
+- **URL:** `admin.pickpoint.my.id` atau `localhost:5173/admin`
+- **Fitur:** Dashboard lengkap dengan sidebar, manajemen paket, laporan
+- **Login:** Semua role (Admin & Staff)
+
+### Mobile Staff
+- **URL:** `admin.pickpoint.my.id/mobile` atau `localhost:5173/mobile`
+- **Fitur:** UI sederhana dengan 2 tombol besar (SIMPAN & AMBIL)
+- **Login:** Khusus Staff only
+- **Optimized:** Untuk layar touchscreen mobile
+
+> **Note:** Staff bisa akses kedua versi (desktop & mobile), namun versi mobile direkomendasikan untuk operasional lapangan.
+
 ## API (Vercel Functions)
 
 Backend sementara disediakan via Vercel Functions di folder `api/`:

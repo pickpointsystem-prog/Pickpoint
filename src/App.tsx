@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AdminApp from './components/AdminApp';
+import MobileStaffApp from './components/MobileStaffApp';
 import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 import Landing from './components/Landing';
@@ -30,6 +31,7 @@ const App: React.FC = () => {
             <Route path="/tracking" element={<Tracking />} />
             <Route path="/form" element={<SelfRegistration />} />
             {isDashboardDomain && <Route path="/admin/*" element={<AdminApp />} />}
+            {isDashboardDomain && <Route path="/mobile" element={<MobileStaffApp />} />}
             <Route path="*" element={<Navigate to={isDashboardDomain ? "/admin" : "/"} replace />} />
           </Routes>
         </ToastProvider>

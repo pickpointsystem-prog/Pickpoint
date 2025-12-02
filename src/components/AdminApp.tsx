@@ -7,7 +7,6 @@ import Users from './Users';
 import Customers from './Customers';
 import Settings from './Settings';
 import Reports from './Reports';
-import StaffMobile from './StaffMobile';
 import {
   LayoutDashboard,
   MapPin,
@@ -37,22 +36,12 @@ const AdminApp: React.FC = () => {
   });
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotif, setShowNotif] = useState(false);
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
 
   useEffect(() => {
     const sessionUser = sessionStorage.getItem('pp_session');
     if (sessionUser) {
       setUser(JSON.parse(sessionUser));
     }
-    
-    // Detect mobile device
-    const checkMobile = () => {
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
-      setIsMobileDevice(isMobile);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const handleLogin = (u: User) => {
@@ -68,11 +57,6 @@ const AdminApp: React.FC = () => {
 
   if (!user) {
     return <Login onLogin={handleLogin} />;
-  }
-
-  // Show mobile-optimized view for STAFF on mobile devices
-  if (isMobileDevice && user.role === 'STAFF') {
-    return <StaffMobile user={user} />;
   }
 
   const viewTitles: Record<View, string> = {

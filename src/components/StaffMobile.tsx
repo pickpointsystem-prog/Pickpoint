@@ -7,6 +7,7 @@ import { realtimeService } from '../services/realtime';
 
 interface StaffMobileProps {
   user: User;
+  onLogout?: () => void;
 }
 
 /**
@@ -14,7 +15,7 @@ interface StaffMobileProps {
  * Menampilkan 2 tombol besar: SIMPAN (tambah paket) dan AMBIL (scan QR pickup)
  * Optimized untuk mobile, tanpa scroll
  */
-const StaffMobile: React.FC<StaffMobileProps> = ({ user }) => {
+const StaffMobile: React.FC<StaffMobileProps> = ({ user, onLogout }) => {
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const [showAddPackage, setShowAddPackage] = useState(false);
 
@@ -87,6 +88,14 @@ const StaffMobile: React.FC<StaffMobileProps> = ({ user }) => {
         <div className="text-center text-xs text-slate-400 mt-8">
           <p>Lokasi: {user.locationId || '-'}</p>
           <p className="mt-1">Mode Mobile Staff</p>
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="mt-4 text-red-500 underline"
+            >
+              Keluar
+            </button>
+          )}
         </div>
       </div>
 
