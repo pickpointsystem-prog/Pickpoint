@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { StorageService } from '../services/storage';
 import { PricingService } from '../services/pricing';
 import { Package, Location } from '../types';
-import { Search, Clock, CheckCircle, AlertTriangle, QrCode } from 'lucide-react';
+import { Search, Clock, CheckCircle, AlertTriangle, QrCode, X } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 
 const Tracking: React.FC = () => {
@@ -160,30 +160,12 @@ const Tracking: React.FC = () => {
 
                      {/* QR Code Button */}
                      <button
-                       onClick={() => setShowQR(!showQR)}
+                       onClick={() => setShowQR(true)}
                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 shadow-md text-sm"
                      >
                        <QrCode className="w-4 h-4" />
-                       {showQR ? 'Sembunyikan QR' : 'Tampilkan QR Code'}
+                       Tampilkan QR Code
                      </button>
-
-                     {/* QR Code Display */}
-                     {showQR && (
-                       <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-3 text-center border border-slate-200">
-                         <p className="text-[10px] text-slate-500 mb-2">
-                           Tunjukkan QR ini ke petugas
-                         </p>
-                         <div className="bg-white p-2 rounded-lg inline-block shadow-sm max-w-full">
-                           <canvas ref={qrCanvasRef} className="max-w-full h-auto"></canvas>
-                         </div>
-                         <div className="mt-2 bg-white rounded-lg p-2 border border-slate-200">
-                           <p className="text-[9px] text-slate-500 uppercase font-bold mb-0.5">Pickup Code</p>
-                           <p className="text-lg font-mono font-bold text-blue-600 tracking-wider">
-                             {result.pkg.pickupCode || result.pkg.trackingNumber}
-                           </p>
-                         </div>
-                       </div>
-                     )}
                    </>
                  )}
 
@@ -215,6 +197,31 @@ const Tracking: React.FC = () => {
           &copy; 2024 Pickpoint
         </p>
       </div>
+
+      {/* QR Code Modal */}
+      {showQR && result && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowQR(false)}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full relative" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowQR(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            <h3 className="text-center font-bold text-slate-800 mb-3 text-lg">QR Code Pickup</h3>
+            <p className="text-center text-xs text-slate-500 mb-4">
+              Tunjukkan QR ini ke petugas untuk scan
+            </p>
+            
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-4 rounded-xl border border-slate-200">
+              <div className="bg-white p-3 rounded-lg inline-block shadow-sm w-full flex justify-center">
+                <canvas ref={qrCanvasRef}></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
