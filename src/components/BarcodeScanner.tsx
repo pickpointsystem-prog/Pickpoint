@@ -69,10 +69,16 @@ const BarcodeScanner: FC<BarcodeScannerProps> = ({ isOpen, onClose, onScan, auto
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true');
         await videoRef.current.play().catch(e => console.warn('Video play blocked:', e));
         setScanning(true);
         setUseCamera(true);
-        requestAnimationFrame(tick);
+        // Start scanning loop after video ready
+        setTimeout(() => {
+          if (videoRef.current && videoRef.current.readyState >= 2) {
+            requestAnimationFrame(tick);
+          }
+        }, 100);
       }
     } catch (err: any) {
       console.error('[BarcodeScanner] Camera error:', err);
@@ -90,7 +96,9 @@ const BarcodeScanner: FC<BarcodeScannerProps> = ({ isOpen, onClose, onScan, auto
   };
 
   const tick = () => {
-    if (!scanning || !videoRef.current || !canvasRef.current) return;
+    if (!scanning || !videoRef.current || !canvasRef.current) {
+      return;
+    }
     
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -103,9 +111,14 @@ const BarcodeScanner: FC<BarcodeScannerProps> = ({ isOpen, onClose, onScan, auto
       if (ctx) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        
+        // Try to decode with more aggressive options
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'attemptBoth'
+        });
         
         if (code && code.data) {
+          console.log('[BarcodeScanner] Code detected:', code.data);
           onScan(code.data);
           stopCamera();
           return;
@@ -113,7 +126,10 @@ const BarcodeScanner: FC<BarcodeScannerProps> = ({ isOpen, onClose, onScan, auto
       }
     }
     
-    requestAnimationFrame(tick);
+    // Continue scanning
+    if (scanning) {
+      requestAnimationFrame(tick);
+    }
   };
 
   if (!isOpen) return null;

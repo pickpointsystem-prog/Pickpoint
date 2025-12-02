@@ -12,8 +12,10 @@ import {
   PackageCheck, Loader2, Wallet, ZoomIn, ZoomOut, Scan
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
-import QRScanner from './QRScanner';
-import BarcodeScanner from './BarcodeScanner';
+// import QRScanner from './QRScanner';
+// import BarcodeScanner from './BarcodeScanner';
+import Html5OmniScanner from './Html5OmniScanner';
+import { useToast } from '../context/ToastContext';
 import BackgroundScanner from './BackgroundScanner';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('id-ID', {
@@ -93,6 +95,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => {
+  const { showToast } = useToast();
     // State untuk expand/collapse KPI
     const [kpiExpanded, setKpiExpanded] = useState(true);
   // --- STATE: DASHBOARD & PACKAGES ---
@@ -117,7 +120,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
   
   // Background scanning for dashboard QR detection
   const dashboardScanEnabled = user.role === 'STAFF';
-  const [preScannedQR, setPreScannedQR] = useState<string>('');
+  // const [preScannedQR, setPreScannedQR] = useState<string>('');
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -174,7 +177,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
   useEffect(() => {
     const unsubscribe = realtimeService.on('QR_SCANNED', (qrData: string) => {
       console.log('[Dashboard] Received QR_SCANNED from mobile:', qrData);
-      setPreScannedQR(qrData);
       setIsQRScannerOpen(true);
     });
 
@@ -184,7 +186,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
   // Handler untuk QR customer terdeteksi - auto-open QR Scanner modal
   const handleQRDetected = (data: string) => {
     console.log('[Dashboard] Customer QR detected, auto-opening scanner:', data);
-    setPreScannedQR(data);
+    // removed: preScannedQR handling; using modal open directly
     setIsQRScannerOpen(true);
   };
 
@@ -209,14 +211,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
 
     const revPackage = filteredForStats.reduce((acc, curr) => acc + (curr.feePaid || 0), 0);
     const revDelivery = filteredForStats.filter(p => p.status === 'PICKED').length * 0;
-    const activeMembers = allCusts.filter(c => c.isMember && new Date(c.membershipExpiry || '') > new Date());
-    const revMembership = activeMembers.length * 50000;
+    const revMembership = 0;
+    const membersActiveCount = allCusts ? allCusts.length : 0;
 
     const statsObj: DashboardStats = {
       packagesIn: filteredForStats.filter(p => p.status === 'ARRIVED').length,
       packagesOut: filteredForStats.filter(p => p.status === 'PICKED').length,
       inventoryActive: relevantPkgs.filter(p => p.status === 'ARRIVED').length,
-      membersActive: activeMembers.length,
+      membersActive: membersActiveCount,
       revDelivery,
       revMembership,
       revPackage,
@@ -1027,9 +1029,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
         </div>
       )}
 
-      {/* 1b. Barcode Scanner Modal for AWB */}
+      {/* 1b. Barcode Scanner Modal for AWB (html5-qrcode) */}
       {isBarcodeScannerOpen && (
-        <BarcodeScanner
+        <Html5OmniScanner
           isOpen={isBarcodeScannerOpen}
           onClose={() => setIsBarcodeScannerOpen(false)}
           onScan={(code) => {
@@ -1039,15 +1041,34 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
         />
       )}
 
-      {/* 1c. QR Scanner Modal for Pickup */}
+      {/* 1c. QR Scanner Modal for Pickup (html5-qrcode) */}
       {isQRScannerOpen && (
-        <QRScanner 
-          preScannedData={preScannedQR}
+        <Html5OmniScanner
+          isOpen={isQRScannerOpen}
           onClose={() => { 
             setIsQRScannerOpen(false);
-            setPreScannedQR('');
-            loadData(); 
-          }} 
+            loadData();
+          }}
+          onScan={(text) => {
+            // Coba cari paket berdasarkan isi QR/barcode
+            const code = (text || '').trim();
+            if (!code) return;
+            const lower = code.toLowerCase();
+            // Cari yang status ARRIVED di lokasi staff (kalau staff)
+            const candidatePkgs = packages.filter(p => {
+              const matches = p.trackingNumber.toLowerCase() === lower ||
+                p.trackingNumber.toLowerCase().includes(lower) ||
+                p.recipientPhone === code ||
+                p.recipientName.toLowerCase().includes(lower);
+              const locationOk = user.role === 'STAFF' ? p.locationId === user.locationId : true;
+              return matches && locationOk && p.status === 'ARRIVED';
+            });
+            if (candidatePkgs.length > 0) {
+              setSelectedPkg(candidatePkgs[0]);
+            } else {
+              showToast?.('Paket tidak ditemukan untuk kode: ' + code);
+            }
+          }}
         />
       )}
 

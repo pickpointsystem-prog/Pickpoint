@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User } from '../types';
 import { PackagePlus, QrCode } from 'lucide-react';
-import QRScanner from './QRScanner';
+import Html5OmniScanner from './Html5OmniScanner';
 import MobileAddPackage from './MobileAddPackage';
 import { realtimeService } from '../services/realtime';
 
@@ -90,15 +90,13 @@ const StaffMobile: React.FC<StaffMobileProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* QR Scanner Modal */}
+      {/* QR Scanner Modal - html5-qrcode */}
       {isQRScannerOpen && (
-        <QRScanner 
-          onClose={() => {
-            setIsQRScannerOpen(false);
-          }}
-          onScanComplete={(qrData) => {
-            // Broadcast ke desktop/tab lain
-            realtimeService.broadcast('QR_SCANNED', qrData);
+        <Html5OmniScanner
+          isOpen={isQRScannerOpen}
+          onClose={() => setIsQRScannerOpen(false)}
+          onScan={(text) => {
+            realtimeService.broadcast('QR_SCANNED', text);
           }}
         />
       )}
