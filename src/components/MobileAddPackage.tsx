@@ -28,6 +28,9 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
   const [locations, setLocations] = useState<Location[]>([]);
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
   const [isTakingPhoto, setIsTakingPhoto] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const [isAutoFilled, setIsAutoFilled] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -35,6 +38,43 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
     setCustomers(StorageService.getCustomers());
     setLocations(StorageService.getLocations());
   }, []);
+
+  const handleNameInput = (val: string) => {
+    if (val.trim() === '') {
+      setFormData(prev => ({ 
+        ...prev, 
+        recipientName: '', 
+        recipientPhone: '', 
+        unitNumber: '' 
+      }));
+      setIsAutoFilled(false);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, recipientName: val }));
+    setIsAutoFilled(false);
+
+    if (val.length > 0) {
+      const matches = customers.filter(c => c.name.toLowerCase().includes(val.toLowerCase()));
+      setFilteredCustomers(matches);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectCustomer = (cust: Customer) => {
+    setFormData(prev => ({
+      ...prev,
+      recipientName: cust.name,
+      recipientPhone: cust.phoneNumber,
+      unitNumber: cust.unitNumber,
+      locationId: prev.locationId
+    }));
+    setIsAutoFilled(true);
+    setShowSuggestions(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,19 +141,31 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' },
-        audio: false 
-      });
+      let stream: MediaStream | null = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false 
+        });
+      } catch (err) {
+        console.warn('[MobileAddPackage] Environment camera failed, trying any camera:', err);
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
+      
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true');
         await videoRef.current.play();
       }
       setIsTakingPhoto(true);
     } catch (err) {
       alert('Tidak dapat mengakses kamera');
-      console.error(err);
+      console.error('[MobileAddPackage] Camera error:', err);
     }
   };
 
@@ -196,16 +248,32 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
           </div>
         </div>
 
-        {/* Nama Penerima */}
-        <div>
+        {/* Nama Penerima with Search */}
+        <div className="relative">
           <label className="block text-sm font-semibold text-slate-700 mb-2">Nama Penerima *</label>
           <input
             type="text"
             value={formData.recipientName}
-            onChange={(e) => setFormData(prev => ({ ...prev, recipientName: e.target.value }))}
+            onChange={(e) => handleNameInput(e.target.value)}
             className="w-full px-4 py-3 border border-slate-300 rounded-lg"
+            placeholder="Ketik nama untuk mencari..."
             required
           />
+          {showSuggestions && filteredCustomers.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              {filteredCustomers.map(cust => (
+                <button
+                  key={cust.id}
+                  type="button"
+                  onClick={() => selectCustomer(cust)}
+                  className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-slate-100 last:border-0"
+                >
+                  <div className="font-semibold text-slate-800">{cust.name}</div>
+                  <div className="text-xs text-slate-500">{cust.phoneNumber} • Unit {cust.unitNumber}</div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Nomor Telepon */}
@@ -215,7 +283,8 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
             type="tel"
             value={formData.recipientPhone}
             onChange={(e) => setFormData(prev => ({ ...prev, recipientPhone: e.target.value }))}
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg"
+            className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50"
+            disabled={isAutoFilled}
             required
           />
         </div>
@@ -227,7 +296,8 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
             type="text"
             value={formData.unitNumber}
             onChange={(e) => setFormData(prev => ({ ...prev, unitNumber: e.target.value }))}
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg"
+            className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50"
+            disabled={isAutoFilled}
             required
           />
         </div>

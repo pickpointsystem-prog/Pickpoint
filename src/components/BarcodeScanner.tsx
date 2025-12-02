@@ -39,7 +39,7 @@ const BarcodeScanner: FC<BarcodeScannerProps> = ({ isOpen, onClose, onScan, auto
     return () => {
       stopCamera();
     };
-  }, [isOpen]);
+  }, [isOpen, autoStart, hideManual, useCamera]);
 
   const startCamera = async () => {
     try {
