@@ -96,6 +96,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => {
+  console.log('[Dashboard] Rendering with user:', user);
   // const { showToast } = useToast();
     // State untuk expand/collapse KPI
     const [kpiExpanded, setKpiExpanded] = useState(true);

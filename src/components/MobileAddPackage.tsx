@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Webcam from 'react-webcam';
 import { User, Package, PackageSize, Customer, Location } from '../types';
 import { StorageService } from '../services/storage';
 import { WhatsAppService } from '../services/whatsapp';
@@ -31,8 +32,7 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [isAutoFilled, setIsAutoFilled] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const webcamRef = useRef<Webcam>(null);
 
   useEffect(() => {
     setCustomers(StorageService.getCustomers());
@@ -139,68 +139,18 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
     onSuccess();
   };
 
-  const startCamera = async () => {
-    try {
-      // Stop any previous stream
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(t => t.stop());
-        streamRef.current = null;
-      }
-
-      let stream: MediaStream | null = null;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          audio: false 
-        });
-      } catch (err) {
-        console.warn('[MobileAddPackage] Environment camera failed, trying any camera:', err);
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      }
-      
-      streamRef.current = stream;
-      if (videoRef.current && stream) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.setAttribute('playsinline', 'true');
-        await videoRef.current.play();
-      }
-      setIsTakingPhoto(true);
-    } catch (err) {
-      alert('Tidak dapat mengakses kamera');
-      console.error('[MobileAddPackage] Camera error:', err);
-    }
-  };
-
   const capturePhoto = () => {
-    if (!videoRef.current) return;
-    
-    const video = videoRef.current;
-    const canvas = document.createElement('canvas');
-    const vw = video.videoWidth || 1280;
-    const vh = video.videoHeight || 720;
-    
-    canvas.width = vw;
-    canvas.height = vh;
-    
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0, vw, vh);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      setFormData(prev => ({ ...prev, photo: dataUrl }));
-      stopCamera();
+    const imageSrc = webcamRef.current?.getScreenshot();
+    if (imageSrc) {
+      setFormData(prev => ({ ...prev, photo: imageSrc }));
+      setIsTakingPhoto(false);
     }
   };
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setIsTakingPhoto(false);
+  const videoConstraints = {
+    facingMode: { ideal: 'environment' },
+    width: { ideal: 1280 },
+    height: { ideal: 720 }
   };
 
   return (
@@ -212,29 +162,6 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
           <X className="w-5 h-5" />
         </button>
       </div>
-
-      {/* Camera Modal */}
-      {isTakingPhoto && (
-        <div className="fixed inset-0 bg-black z-50 flex flex-col">
-          <div className="flex-1 relative">
-            <video ref={videoRef} className="w-full h-full object-cover" playsInline />
-          </div>
-          <div className="p-4 flex gap-3">
-            <button
-              onClick={stopCamera}
-              className="flex-1 bg-slate-600 text-white py-3 rounded-lg font-semibold"
-            >
-              Batal
-            </button>
-            <button
-              onClick={capturePhoto}
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold"
-            >
-              Ambil Foto
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="p-4 space-y-4 pb-24">
@@ -365,7 +292,7 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
           ) : (
             <button
               type="button"
-              onClick={startCamera}
+              onClick={() => setIsTakingPhoto(true)}
               className="w-full py-3 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center gap-2"
             >
               <Camera className="w-5 h-5" />
@@ -402,6 +329,38 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
         }}
         title="Scan AWB / Barcode"
       />
+
+      {/* Camera Modal */}
+      {isTakingPhoto && (
+        <div className="fixed inset-0 bg-black z-[100] flex flex-col">
+          <div className="flex items-center justify-between p-4 bg-black/80">
+            <h3 className="text-white font-semibold">Ambil Foto Paket</h3>
+            <button
+              onClick={() => setIsTakingPhoto(false)}
+              className="text-white p-2"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="flex-1 relative">
+            <Webcam
+              ref={webcamRef}
+              audio={false}
+              screenshotFormat="image/jpeg"
+              videoConstraints={videoConstraints}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="p-4 bg-black/80 flex justify-center">
+            <button
+              onClick={capturePhoto}
+              className="bg-white rounded-full p-4 shadow-lg"
+            >
+              <Camera className="w-8 h-8 text-slate-800" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
