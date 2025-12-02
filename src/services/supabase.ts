@@ -125,5 +125,23 @@ export const SupabaseService = {
       console.error('[Supabase] Insert activity exception:', e);
       return { success: false, error: e.message };
     }
+  },
+
+  deleteFromTable: async (
+    table: string,
+    id: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!client) return { success: false, error: 'Client not initialized' };
+    try {
+      const { error } = await client.from(table).delete().eq('id', id);
+      if (error) {
+        console.error(`[Supabase] Delete from ${table} error:`, error);
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (e: any) {
+      console.error(`[Supabase] Delete from ${table} exception:`, e);
+      return { success: false, error: e.message };
+    }
   }
 };

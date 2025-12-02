@@ -65,19 +65,62 @@ export const StorageService = {
     ensure(SEED_KEYS.PACKAGES, []);
     ensure(SEED_KEYS.ACTIVITIES, []);
 
-    const seedFromSupabase = async () => {
-      if (!SupabaseService.isReady()) return;
-      const remote = await SupabaseService.fetchAllData();
-      if (!remote) return;
-      if (remote.users.length) set(SEED_KEYS.USERS, remote.users);
-      if (remote.locations.length) set(SEED_KEYS.LOCATIONS, remote.locations);
-      if (remote.packages.length) set(SEED_KEYS.PACKAGES, remote.packages);
-      if (remote.customers.length) set(SEED_KEYS.CUSTOMERS, remote.customers);
-      if (remote.activities.length) set(SEED_KEYS.ACTIVITIES, remote.activities);
-      if (remote.settings) set(SEED_KEYS.SETTINGS, { ...INITIAL_SETTINGS, ...remote.settings });
+    const autoSyncInitial = async () => {
+      if (!SupabaseService.isReady()) {
+        if (config.enableDebugMode) console.log('⚠️ Supabase not ready, skipping auto-sync');
+        return;
+      }
+
+      try {
+        // Fetch data dari Supabase
+        const remote = await SupabaseService.fetchAllData();
+        
+        if (!remote) {
+          if (config.enableDebugMode) console.log('⚠️ Failed to fetch from Supabase');
+          return;
+        }
+
+        // Cek apakah database Supabase kosong (first time setup)
+        const isDatabaseEmpty = remote.locations.length === 0 && remote.users.length === 0;
+
+        if (isDatabaseEmpty) {
+          // Database kosong - AUTO SEED ke Supabase
+          console.log('🚀 Database kosong, auto-sync initial data ke Supabase...');
+          
+          const users = get<User[]>(SEED_KEYS.USERS, []);
+          const locations = get<Location[]>(SEED_KEYS.LOCATIONS, []);
+          const settings = get<AppSettings>(SEED_KEYS.SETTINGS, INITIAL_SETTINGS);
+
+          // Sync sequential (respect foreign keys)
+          await SupabaseService.upsertTable('settings', [settings]);
+          await SupabaseService.upsertTable('locations', locations);
+          await SupabaseService.upsertTable('users', users);
+
+          console.log('✅ Initial data berhasil di-sync ke Supabase!');
+        } else {
+          // Database ada data - LOAD dari Supabase ke localStorage
+          console.log('📥 Loading data dari Supabase...');
+          
+          if (remote.users.length) set(SEED_KEYS.USERS, remote.users);
+          if (remote.locations.length) set(SEED_KEYS.LOCATIONS, remote.locations);
+          if (remote.packages.length) set(SEED_KEYS.PACKAGES, remote.packages);
+          if (remote.customers.length) set(SEED_KEYS.CUSTOMERS, remote.customers);
+          if (remote.activities.length) set(SEED_KEYS.ACTIVITIES, remote.activities);
+          if (remote.settings) set(SEED_KEYS.SETTINGS, { ...INITIAL_SETTINGS, ...remote.settings });
+
+          console.log('✅ Data loaded dari Supabase:', {
+            users: remote.users.length,
+            locations: remote.locations.length,
+            packages: remote.packages.length,
+            customers: remote.customers.length
+          });
+        }
+      } catch (error) {
+        console.error('❌ Error during auto-sync:', error);
+      }
     };
 
-    seedFromSupabase();
+    autoSyncInitial();
   },
 
   // Users
@@ -107,7 +150,10 @@ export const StorageService = {
     const users = get<User[]>(SEED_KEYS.USERS, []);
     const filtered = users.filter(u => u.id !== id);
     set(SEED_KEYS.USERS, filtered);
-    syncToSupabase('users', filtered);
+    // Delete dari Supabase
+    if (SupabaseService.isReady()) {
+      SupabaseService.deleteFromTable('users', id);
+    }
   },
 
   // Locations
@@ -125,7 +171,10 @@ export const StorageService = {
     const locs = get<Location[]>(SEED_KEYS.LOCATIONS, []);
     const filtered = locs.filter(l => l.id !== id);
     set(SEED_KEYS.LOCATIONS, filtered);
-    syncToSupabase('locations', filtered);
+    // Delete dari Supabase
+    if (SupabaseService.isReady()) {
+      SupabaseService.deleteFromTable('locations', id);
+    }
   },
 
   // Packages
@@ -153,7 +202,10 @@ export const StorageService = {
     const custs = get<Customer[]>(SEED_KEYS.CUSTOMERS, []);
     const filtered = custs.filter(c => c.id !== id);
     set(SEED_KEYS.CUSTOMERS, filtered);
-    syncToSupabase('customers', filtered);
+    // Delete dari Supabase
+    if (SupabaseService.isReady()) {
+      SupabaseService.deleteFromTable('customers', id);
+    }
   },
 
   // Settings with Self-Healing/Migration for new keys
