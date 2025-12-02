@@ -36,8 +36,8 @@ const Tracking: React.FC = () => {
       });
       
       QRCodeLib.toCanvas(qrCanvasRef.current, qrData, {
-        width: 280,
-        margin: 2,
+        width: 240,
+        margin: 1,
         color: {
           dark: '#1e293b',
           light: '#ffffff'
@@ -84,16 +84,8 @@ const Tracking: React.FC = () => {
   const isDirectLink = searchParams.get('id') && !error && result;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
-      <div className="w-full sm:max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-blue-600 rounded-xl mx-auto flex items-center justify-center mb-4 shadow-lg shadow-blue-200">
-             <span className="text-2xl text-white font-bold">P</span>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-800">Track Your Package</h1>
-          <p className="text-slate-500">Enter AWB or Tracking ID sent to your WhatsApp</p>
-        </div>
-
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
           {/* Search field - Hidden jika direct link dan ada result */}
           {!isDirectLink && (
@@ -177,13 +169,13 @@ const Tracking: React.FC = () => {
 
                      {/* QR Code Display */}
                      {showQR && (
-                       <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 text-center border-2 border-slate-200">
-                         <h3 className="font-bold text-slate-800 mb-2">Scan QR di Petugas</h3>
-                         <p className="text-xs text-slate-500 mb-4">
+                       <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-4 sm:p-6 text-center border-2 border-slate-200">
+                         <h3 className="font-bold text-slate-800 mb-2 text-sm sm:text-base">Scan QR di Petugas</h3>
+                         <p className="text-xs text-slate-500 mb-3 sm:mb-4">
                            Tunjukkan QR ini ke petugas untuk verifikasi cepat
                          </p>
-                         <div className="bg-white p-4 rounded-xl inline-block shadow-md">
-                           <canvas ref={qrCanvasRef}></canvas>
+                         <div className="bg-white p-3 sm:p-4 rounded-xl inline-block shadow-md max-w-full">
+                           <canvas ref={qrCanvasRef} className="max-w-full h-auto"></canvas>
                          </div>
                          <div className="mt-4 bg-white rounded-lg p-3 border border-slate-200">
                            <p className="text-xs text-slate-500 uppercase font-bold mb-1">Pickup Code</p>
