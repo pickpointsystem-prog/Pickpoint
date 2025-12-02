@@ -125,61 +125,60 @@ const Tracking: React.FC = () => {
                 PACKAGE {result.pkg.status}
               </div>
               
-              <div className="p-6 space-y-6">
+              <div className="p-4 space-y-3">
                  {/* Photo */}
                  {result.pkg.photo && (
-                   <div className="rounded-xl overflow-hidden border border-slate-200 h-48">
+                   <div className="rounded-lg overflow-hidden border border-slate-200 h-32">
                      <img src={result.pkg.photo} className="w-full h-full object-cover" />
                    </div>
                  )}
 
                  {/* Key Details */}
-                 <div className="grid grid-cols-2 gap-4">
-                   <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                     <p className="text-xs text-slate-400 font-bold uppercase">AWB</p>
-                     <p className="text-xl font-mono font-bold text-slate-800 tracking-wider">
+                 <div className="grid grid-cols-2 gap-2">
+                   <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                     <p className="text-[10px] text-slate-400 font-bold uppercase">AWB</p>
+                     <p className="text-sm font-mono font-bold text-slate-800 tracking-wider">
                        {result.pkg.trackingNumber}
                      </p>
                    </div>
-                   <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                     <p className="text-xs text-slate-400 font-bold uppercase">Location</p>
-                     <p className="text-sm font-bold text-slate-800 line-clamp-2">{result.loc.name}</p>
+                   <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                     <p className="text-[10px] text-slate-400 font-bold uppercase">Location</p>
+                     <p className="text-xs font-bold text-slate-800 line-clamp-2">{result.loc.name}</p>
                    </div>
                  </div>
 
                  {/* Fees */}
                  {result.pkg.status === 'ARRIVED' && (
                    <>
-                     <div className="border border-orange-200 bg-orange-50 rounded-xl p-4 flex justify-between items-center">
+                     <div className="border border-orange-200 bg-orange-50 rounded-lg p-3 flex justify-between items-center">
                         <div>
-                          <p className="text-xs font-bold text-orange-800 uppercase">Current Fee</p>
-                          <p className="text-[10px] text-orange-600">Pay at cashier</p>
+                          <p className="text-[10px] font-bold text-orange-800 uppercase">Current Fee</p>
+                          <p className="text-[9px] text-orange-600">Pay at cashier</p>
                         </div>
-                        <p className="text-2xl font-bold text-orange-600">Rp {result.fee.toLocaleString()}</p>
+                        <p className="text-lg font-bold text-orange-600">Rp {result.fee.toLocaleString()}</p>
                      </div>
 
                      {/* QR Code Button */}
                      <button
                        onClick={() => setShowQR(!showQR)}
-                       className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200"
+                       className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 shadow-md text-sm"
                      >
-                       <QrCode className="w-5 h-5" />
-                       {showQR ? 'Sembunyikan QR Code' : 'Tampilkan QR Code untuk Scan'}
+                       <QrCode className="w-4 h-4" />
+                       {showQR ? 'Sembunyikan QR' : 'Tampilkan QR Code'}
                      </button>
 
                      {/* QR Code Display */}
                      {showQR && (
-                       <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-4 sm:p-6 text-center border-2 border-slate-200">
-                         <h3 className="font-bold text-slate-800 mb-2 text-sm sm:text-base">Scan QR di Petugas</h3>
-                         <p className="text-xs text-slate-500 mb-3 sm:mb-4">
-                           Tunjukkan QR ini ke petugas untuk verifikasi cepat
+                       <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-3 text-center border border-slate-200">
+                         <p className="text-[10px] text-slate-500 mb-2">
+                           Tunjukkan QR ini ke petugas
                          </p>
-                         <div className="bg-white p-3 sm:p-4 rounded-xl inline-block shadow-md max-w-full">
+                         <div className="bg-white p-2 rounded-lg inline-block shadow-sm max-w-full">
                            <canvas ref={qrCanvasRef} className="max-w-full h-auto"></canvas>
                          </div>
-                         <div className="mt-4 bg-white rounded-lg p-3 border border-slate-200">
-                           <p className="text-xs text-slate-500 uppercase font-bold mb-1">Pickup Code</p>
-                           <p className="text-2xl font-mono font-bold text-blue-600 tracking-wider">
+                         <div className="mt-2 bg-white rounded-lg p-2 border border-slate-200">
+                           <p className="text-[9px] text-slate-500 uppercase font-bold mb-0.5">Pickup Code</p>
+                           <p className="text-lg font-mono font-bold text-blue-600 tracking-wider">
                              {result.pkg.pickupCode || result.pkg.trackingNumber}
                            </p>
                          </div>
@@ -189,20 +188,20 @@ const Tracking: React.FC = () => {
                  )}
 
                  {/* Timeline */}
-                 <div className="space-y-3 pt-2">
-                   <div className="flex gap-3">
-                     <div className="mt-1"><Clock className="w-4 h-4 text-slate-400" /></div>
+                 <div className="space-y-2 pt-1">
+                   <div className="flex gap-2">
+                     <div className="mt-0.5"><Clock className="w-3.5 h-3.5 text-slate-400" /></div>
                      <div>
-                       <p className="text-sm font-bold text-slate-700">Arrived at Reception</p>
-                       <p className="text-xs text-slate-500">{new Date(result.pkg.dates.arrived).toLocaleString()}</p>
+                       <p className="text-xs font-semibold text-slate-700">Arrived at Reception</p>
+                       <p className="text-[10px] text-slate-500">{new Date(result.pkg.dates.arrived).toLocaleString()}</p>
                      </div>
                    </div>
                    {result.pkg.dates.picked && (
-                     <div className="flex gap-3">
-                       <div className="mt-1"><CheckCircle className="w-4 h-4 text-green-500" /></div>
+                     <div className="flex gap-2">
+                       <div className="mt-0.5"><CheckCircle className="w-3.5 h-3.5 text-green-500" /></div>
                        <div>
-                         <p className="text-sm font-bold text-slate-700">Picked Up</p>
-                         <p className="text-xs text-slate-500">{new Date(result.pkg.dates.picked).toLocaleString()}</p>
+                         <p className="text-xs font-semibold text-slate-700">Picked Up</p>
+                         <p className="text-[10px] text-slate-500">{new Date(result.pkg.dates.picked).toLocaleString()}</p>
                        </div>
                      </div>
                    )}
@@ -212,8 +211,8 @@ const Tracking: React.FC = () => {
           )}
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-8">
-          &copy; 2024 Pickpoint Tracking System
+        <p className="text-center text-[10px] text-slate-400 mt-4">
+          &copy; 2024 Pickpoint
         </p>
       </div>
     </div>
