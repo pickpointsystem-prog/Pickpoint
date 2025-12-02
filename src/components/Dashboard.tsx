@@ -88,9 +88,10 @@ const exportPackagesToCSV = (packages: Package[]) => {
 
 interface DashboardProps {
   user: User;
+  openAddModal?: boolean;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ user }) => {
+const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => {
     // State untuk expand/collapse KPI
     const [kpiExpanded, setKpiExpanded] = useState(true);
   // --- STATE: DASHBOARD & PACKAGES ---
@@ -113,9 +114,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [isPhotoVisible, setIsPhotoVisible] = useState(false);
   
-  // Background scanning
-  const [backgroundScanEnabled, setBackgroundScanEnabled] = useState(false);
+  // Background scanning for dashboard QR detection
   const dashboardScanEnabled = user.role === 'STAFF';
+  const [preScannedQR, setPreScannedQR] = useState<string>('');
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -161,25 +162,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     return () => clearInterval(interval);
   }, [filter, user]);
 
-  // Background scanning control: enable when Add Modal is open
+  // Auto-open Add Modal jika dipanggil dari StaffMobile
   useEffect(() => {
-    setBackgroundScanEnabled(isAddModalOpen);
-  }, [isAddModalOpen]);
+    if (openAddModal) {
+      setIsAddModalOpen(true);
+    }
+  }, [openAddModal]);
 
   // Handler untuk QR customer terdeteksi - auto-open QR Scanner modal
   const handleQRDetected = (data: string) => {
     console.log('[Dashboard] Customer QR detected, auto-opening scanner:', data);
+    setPreScannedQR(data);
     setIsQRScannerOpen(true);
-    setBackgroundScanEnabled(false); // Stop background scanning
-  };
-
-  // Handler untuk barcode AWB terdeteksi - auto-fill form
-  const handleBarcodeDetected = (data: string) => {
-    console.log('[Dashboard] AWB barcode detected, auto-filling:', data);
-    if (isAddModalOpen) {
-      setFormData(prev => ({ ...prev, tracking: data }));
-    }
-    setBackgroundScanEnabled(false); // Stop background scanning after detection
   };
 
   const calculateStats = (allPkgs: Package[], allCusts: Customer[]) => {
@@ -1030,16 +1024,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             setFormData(prev => ({ ...prev, tracking: code }));
             setIsBarcodeScannerOpen(false);
           }}
-          autoStart
-          hideManual
         />
       )}
 
       {/* 1c. QR Scanner Modal for Pickup */}
       {isQRScannerOpen && (
         <QRScanner 
+          preScannedData={preScannedQR}
           onClose={() => { 
-            setIsQRScannerOpen(false); 
+            setIsQRScannerOpen(false);
+            setPreScannedQR('');
             loadData(); 
           }} 
         />
@@ -1049,12 +1043,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       <BackgroundScanner
         enabled={dashboardScanEnabled && !isQRScannerOpen}
         onQRDetected={handleQRDetected}
-      />
-
-      {/* Background Scanner - Runs when Add Modal open for auto-fill AWB */}
-      <BackgroundScanner
-        enabled={backgroundScanEnabled}
-        onBarcodeDetected={handleBarcodeDetected}
       />
 
       {/* 2. DETAIL & ACTION MODAL */}

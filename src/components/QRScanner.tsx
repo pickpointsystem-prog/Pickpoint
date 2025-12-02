@@ -5,7 +5,7 @@ import { StorageService } from '../services/storage';
 import { PricingService } from '../services/pricing';
 import { Camera, X, CheckCircle, Package as PackageIcon } from 'lucide-react';
 
-const QRScanner: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+const QRScanner: React.FC<{ onClose: () => void; preScannedData?: string }> = ({ onClose, preScannedData }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [scanning, setScanning] = useState(false);
@@ -14,7 +14,12 @@ const QRScanner: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
-    startScanning();
+    // Jika ada pre-scanned data, langsung proses tanpa buka kamera
+    if (preScannedData) {
+      handleQRDetected(preScannedData);
+    } else {
+      startScanning();
+    }
     return () => {
       stopCamera();
     };
@@ -162,22 +167,22 @@ const QRScanner: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3">
-      <div className="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Camera className="w-4 h-4 text-white" />
-            <h2 className="font-semibold text-white text-base">Scan QR Paket</h2>
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Camera className="w-5 h-5 text-white" />
+            <h2 className="font-semibold text-white text-lg">Scan QR Paket</h2>
           </div>
-          <button onClick={onClose} className="text-white hover:bg-white/20 p-1.5 rounded-lg">
-            <X className="w-4 h-4" />
+          <button onClick={onClose} className="text-white hover:bg-white/20 p-2 rounded-lg">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Scanner Area */}
         {!scannedData && (
-          <div className="p-3">
+          <div className="p-5">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
                 {error}
