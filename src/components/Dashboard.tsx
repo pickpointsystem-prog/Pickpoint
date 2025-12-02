@@ -9,9 +9,11 @@ import {
   Package as PackageIcon, DollarSign, Users, Activity, 
   ArrowUpRight, ArrowDownRight, Search, Plus, 
   QrCode, X, Truck, MessageCircle, Trash2, Camera, Lock,
-  PackageCheck, Loader2, Wallet, ZoomIn, ZoomOut
+  PackageCheck, Loader2, Wallet, ZoomIn, ZoomOut, Scan
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import QRScanner from './QRScanner';
+import BarcodeScanner from './BarcodeScanner';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
@@ -103,6 +105,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
   const [selectedPkg, setSelectedPkg] = useState<Package | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
   const [selectedPickupIds, setSelectedPickupIds] = useState<string[]>([]);
@@ -628,6 +632,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             />
           </div>
           <div className="relative z-[1] flex w-full items-center justify-end gap-2 lg:w-auto">
+            {/* Scan QR Button */}
+            <button
+              type="button"
+              onClick={() => setIsQRScannerOpen(true)}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:from-purple-700 hover:to-purple-800"
+            >
+              <Scan className="w-4 h-4" /> Scan QR
+            </button>
             <button
               type="button"
               onClick={handleBulkPickup}
@@ -857,7 +869,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                   <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Nomor Resi / AWB <span className="text-red-500">*</span></label>
                   <div className="flex gap-2">
                     <input required autoFocus className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.tracking} onChange={e => setFormData({...formData, tracking: e.target.value})} placeholder="Scan atau ketik nomor resi..." aria-label="Nomor Resi" />
-                    <button type="button" className="p-2.5 bg-slate-100 rounded-lg hover:bg-slate-200 text-slate-600" aria-label="Scan QR"><QrCode className="w-5 h-5" /></button>
+                    <button type="button" onClick={() => setIsBarcodeScannerOpen(true)} className="p-2.5 bg-slate-100 rounded-lg hover:bg-slate-200 text-slate-600" aria-label="Scan QR"><QrCode className="w-5 h-5" /></button>
                   </div>
                 </div>
                 {getSelectedLocation()?.pricing.type === 'SIZE' && (
@@ -982,6 +994,23 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* 1b. Barcode Scanner Modal for AWB */}
+      {isBarcodeScannerOpen && (
+        <BarcodeScanner
+          isOpen={isBarcodeScannerOpen}
+          onClose={() => setIsBarcodeScannerOpen(false)}
+          onScan={(code) => {
+            setFormData(prev => ({ ...prev, tracking: code }));
+            setIsBarcodeScannerOpen(false);
+          }}
+        />
+      )}
+
+      {/* 1c. QR Scanner Modal for Pickup */}
+      {isQRScannerOpen && (
+        <QRScanner onClose={() => { setIsQRScannerOpen(false); loadData(); }} />
       )}
 
       {/* 2. DETAIL & ACTION MODAL */}
