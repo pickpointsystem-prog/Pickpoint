@@ -5,7 +5,11 @@ import { StorageService } from '../services/storage';
 import { PricingService } from '../services/pricing';
 import { Camera, X, CheckCircle, Package as PackageIcon } from 'lucide-react';
 
-const QRScanner: React.FC<{ onClose: () => void; preScannedData?: string }> = ({ onClose, preScannedData }) => {
+const QRScanner: React.FC<{ 
+  onClose: () => void; 
+  preScannedData?: string;
+  onScanComplete?: (qrData: string) => void;
+}> = ({ onClose, preScannedData, onScanComplete }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [scanning, setScanning] = useState(false);
@@ -110,6 +114,9 @@ const QRScanner: React.FC<{ onClose: () => void; preScannedData?: string }> = ({
   };
 
   const handleQRDetected = (qrData: string) => {
+    // Notify parent component (for realtime broadcasting)
+    onScanComplete?.(qrData);
+    
     try {
       const data = JSON.parse(qrData);
       

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { User } from '../types';
 import { PackagePlus, QrCode } from 'lucide-react';
 import QRScanner from './QRScanner';
-import Dashboard from './Dashboard';
+import MobileAddPackage from './MobileAddPackage';
+import { realtimeService } from '../services/realtime';
 
 interface StaffMobileProps {
   user: User;
@@ -14,12 +15,12 @@ interface StaffMobileProps {
  * Optimized untuk mobile, tanpa scroll
  */
 const StaffMobile: React.FC<StaffMobileProps> = ({ user }) => {
-  const [mode, setMode] = useState<'menu' | 'simpan' | 'ambil'>('menu');
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [showAddPackage, setShowAddPackage] = useState(false);
 
-  // Handler untuk tombol SIMPAN - redirect ke dashboard dengan modal tambah paket terbuka
+  // Handler untuk tombol SIMPAN - tampilkan form mobile
   const handleSimpan = () => {
-    setMode('simpan');
+    setShowAddPackage(true);
   };
 
   // Handler untuk tombol AMBIL - langsung buka QR scanner
@@ -27,9 +28,15 @@ const StaffMobile: React.FC<StaffMobileProps> = ({ user }) => {
     setIsQRScannerOpen(true);
   };
 
-  // Jika mode simpan, tampilkan Dashboard dengan modal tambah paket terbuka
-  if (mode === 'simpan') {
-    return <Dashboard user={user} openAddModal={true} />;
+  // Jika show add package, tampilkan form tambah paket mobile
+  if (showAddPackage) {
+    return (
+      <MobileAddPackage 
+        user={user} 
+        onClose={() => setShowAddPackage(false)}
+        onSuccess={() => setShowAddPackage(false)}
+      />
+    );
   }
 
   // Menu utama - 2 tombol besar
@@ -88,7 +95,11 @@ const StaffMobile: React.FC<StaffMobileProps> = ({ user }) => {
         <QRScanner 
           onClose={() => {
             setIsQRScannerOpen(false);
-          }} 
+          }}
+          onScanComplete={(qrData) => {
+            // Broadcast ke desktop/tab lain
+            realtimeService.broadcast('QR_SCANNED', qrData);
+          }}
         />
       )}
     </div>

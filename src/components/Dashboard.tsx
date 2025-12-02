@@ -4,6 +4,7 @@ import { StorageService } from '../services/storage';
 import { PricingService } from '../services/pricing';
 import { WhatsAppService } from '../services/whatsapp';
 import { COURIER_OPTIONS } from '../constants';
+import { realtimeService } from '../services/realtime';
 import { 
   Package as PackageIcon, DollarSign, Users, Activity, 
   ArrowUpRight, ArrowDownRight, Search, Plus, 
@@ -168,6 +169,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
       setIsAddModalOpen(true);
     }
   }, [openAddModal]);
+
+  // Listen for realtime events from other devices (mobile scan → desktop popup)
+  useEffect(() => {
+    const unsubscribe = realtimeService.on('QR_SCANNED', (qrData: string) => {
+      console.log('[Dashboard] Received QR_SCANNED from mobile:', qrData);
+      setPreScannedQR(qrData);
+      setIsQRScannerOpen(true);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Handler untuk QR customer terdeteksi - auto-open QR Scanner modal
   const handleQRDetected = (data: string) => {

@@ -9,9 +9,9 @@ interface BarcodeScannerProps {
   hideManual?: boolean;
 }
 
-const BarcodeScanner: FC<BarcodeScannerProps> = ({ isOpen, onClose, onScan, autoStart = false, hideManual = false }) => {
+const BarcodeScanner: FC<BarcodeScannerProps> = ({ isOpen, onClose, onScan, autoStart = true, hideManual = true }) => {
   const [manualCode, setManualCode] = useState('');
-  const [useCamera, setUseCamera] = useState<boolean>(hideManual ? true : false);
+  const [useCamera, setUseCamera] = useState<boolean>(true);
   const [scanning, setScanning] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
