@@ -4,15 +4,16 @@ import { useSearchParams } from 'react-router-dom';
 import { StorageService } from '../services/storage';
 import { PricingService } from '../services/pricing';
 import { Package, Location } from '../types';
-import { Search, Clock, CheckCircle, AlertTriangle, QrCode, X } from 'lucide-react';
+import { Search, AlertTriangle, QrCode, X } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 
 const Tracking: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('id') || '');
-  const [result, setResult] = useState<{pkg: Package, loc: Location, fee: number} | null>(null);
+  const [results, setResults] = useState<Array<{pkg: Package, loc: Location, fee: number}>>([]);
   const [error, setError] = useState('');
   const [showQR, setShowQR] = useState(false);
+  const [selectedPkgId, setSelectedPkgId] = useState<string | null>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Auto-search on load if param exists
@@ -23,16 +24,17 @@ const Tracking: React.FC = () => {
     }
   }, [searchParams]);
 
-  // Generate QR Code when result changes and QR is shown
+  // Generate QR Code when selected package and QR is shown
   useEffect(() => {
-    if (result && showQR && qrCanvasRef.current) {
+    const selectedResult = results.find(r => r.pkg.id === selectedPkgId);
+    if (selectedResult && showQR && qrCanvasRef.current) {
       const qrData = JSON.stringify({
-        id: result.pkg.id,
-        tracking: result.pkg.trackingNumber,
-        name: result.pkg.recipientName,
-        phone: result.pkg.recipientPhone,
-        pickupCode: result.pkg.pickupCode,
-        location: result.loc.name
+        id: selectedResult.pkg.id,
+        tracking: selectedResult.pkg.trackingNumber,
+        name: selectedResult.pkg.recipientName,
+        phone: selectedResult.pkg.recipientPhone,
+        pickupCode: selectedResult.pkg.pickupCode,
+        location: selectedResult.loc.name
       });
       
       QRCodeLib.toCanvas(qrCanvasRef.current, qrData, {
@@ -44,7 +46,7 @@ const Tracking: React.FC = () => {
         }
       });
     }
-  }, [result, showQR]);
+  }, [results, selectedPkgId, showQR]);
 
   const handleSearch = (trackingId: string) => {
     const trimmed = trackingId.trim();
@@ -53,10 +55,10 @@ const Tracking: React.FC = () => {
       return;
     }
     setError('');
-    setResult(null);
+    setResults([]);
 
     const packages = StorageService.getPackages();
-    // Cari dengan case-insensitive dan trim space
+    // Cari paket dengan tracking ID atau ID
     const found = packages.find(p => 
       p.trackingNumber.trim().toLowerCase() === trimmed.toLowerCase() ||
       p.id.toLowerCase() === trimmed.toLowerCase()
@@ -66,12 +68,26 @@ const Tracking: React.FC = () => {
       const locations = StorageService.getLocations();
       const customers = StorageService.getCustomers();
       
-      const loc = locations.find(l => l.id === found.locationId);
-      const cust = customers.find(c => c.phoneNumber === found.recipientPhone);
+      // Cari SEMUA paket dengan nomor telepon yang sama
+      const sameRecipientPackages = packages.filter(p => 
+        p.recipientPhone === found.recipientPhone && p.status === 'ARRIVED'
+      );
       
-      if (loc) {
-        const fee = PricingService.calculateFee(found, loc, cust);
-        setResult({ pkg: found, loc, fee });
+      const packageResults: Array<{pkg: Package, loc: Location, fee: number}> = [];
+      
+      for (const pkg of sameRecipientPackages) {
+        const loc = locations.find(l => l.id === pkg.locationId);
+        const cust = customers.find(c => c.phoneNumber === pkg.recipientPhone);
+        
+        if (loc) {
+          const fee = PricingService.calculateFee(pkg, loc, cust);
+          packageResults.push({ pkg, loc, fee });
+        }
+      }
+      
+      if (packageResults.length > 0) {
+        setResults(packageResults);
+        setSelectedPkgId(packageResults[0].pkg.id); // Auto-select first
       } else {
         setError("Data lokasi tidak ditemukan. Hubungi administrator.");
       }
@@ -81,7 +97,9 @@ const Tracking: React.FC = () => {
   };
 
   // Auto-show detail dari URL tanpa search field
-  const isDirectLink = searchParams.get('id') && !error && result;
+  const isDirectLink = searchParams.get('id') && !error && results.length > 0;
+  const selectedResult = results.find(r => r.pkg.id === selectedPkgId);
+  const totalFee = results.reduce((sum, r) => sum + r.fee, 0);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 sm:p-6">
@@ -115,79 +133,82 @@ const Tracking: React.FC = () => {
             </div>
           )}
 
-          {result && (
+          {results.length > 0 && (
             <div>
-              {/* Status Banner */}
-              <div className={`p-4 text-center font-bold text-white ${
-                result.pkg.status === 'ARRIVED' ? 'bg-blue-500' :
-                result.pkg.status === 'PICKED' ? 'bg-green-500' : 'bg-red-500'
-              }`}>
-                PACKAGE {result.pkg.status}
+              {/* Recipient Info Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-3 text-white">
+                <p className="font-bold text-sm">{results[0].pkg.recipientName}</p>
+                <p className="text-xs opacity-90">Unit {results[0].pkg.unitNumber}</p>
+                <p className="text-xs opacity-90">{results[0].pkg.recipientPhone}</p>
               </div>
               
-              <div className="p-4 space-y-3">
-                 {/* Photo */}
-                 {result.pkg.photo && (
-                   <div className="rounded-lg overflow-hidden border border-slate-200 h-32">
-                     <img src={result.pkg.photo} className="w-full h-full object-cover" />
-                   </div>
-                 )}
+              <div className="p-3 space-y-2">
+                {/* Total Summary */}
+                {results.some(r => r.pkg.status === 'ARRIVED') && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-[10px] font-bold text-orange-800 uppercase">Total {results.length} Paket</p>
+                        <p className="text-[9px] text-orange-600">Bayar di kasir</p>
+                      </div>
+                      <p className="text-xl font-bold text-orange-600">Rp {totalFee.toLocaleString()}</p>
+                    </div>
+                  </div>
+                )}
 
-                 {/* Key Details */}
-                 <div className="grid grid-cols-2 gap-2">
-                   <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                     <p className="text-[10px] text-slate-400 font-bold uppercase">AWB</p>
-                     <p className="text-sm font-mono font-bold text-slate-800 tracking-wider">
-                       {result.pkg.trackingNumber}
-                     </p>
-                   </div>
-                   <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                     <p className="text-[10px] text-slate-400 font-bold uppercase">Location</p>
-                     <p className="text-xs font-bold text-slate-800 line-clamp-2">{result.loc.name}</p>
-                   </div>
-                 </div>
-
-                 {/* Fees */}
-                 {result.pkg.status === 'ARRIVED' && (
-                   <>
-                     <div className="border border-orange-200 bg-orange-50 rounded-lg p-3 flex justify-between items-center">
-                        <div>
-                          <p className="text-[10px] font-bold text-orange-800 uppercase">Current Fee</p>
-                          <p className="text-[9px] text-orange-600">Pay at cashier</p>
+                {/* Package List */}
+                <div className="space-y-2">
+                  {results.map((result) => (
+                    <div
+                      key={result.pkg.id}
+                      className={`border rounded-lg p-2 cursor-pointer transition-all ${
+                        selectedPkgId === result.pkg.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-slate-200 hover:border-blue-300'
+                      }`}
+                      onClick={() => setSelectedPkgId(result.pkg.id)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="text-xs font-mono font-bold text-slate-800">
+                            {result.pkg.trackingNumber}
+                          </p>
+                          <p className="text-[10px] text-slate-500">{result.loc.name}</p>
+                          <p className="text-[10px] text-slate-500">
+                            {new Date(result.pkg.dates.arrived).toLocaleDateString()}
+                          </p>
                         </div>
-                        <p className="text-lg font-bold text-orange-600">Rp {result.fee.toLocaleString()}</p>
-                     </div>
+                        <div className="text-right">
+                          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                            result.pkg.status === 'ARRIVED'
+                              ? 'bg-blue-100 text-blue-700'
+                              : result.pkg.status === 'PICKED'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}>
+                            {result.pkg.status}
+                          </span>
+                          {result.pkg.status === 'ARRIVED' && (
+                            <p className="text-xs font-bold text-orange-600 mt-1">
+                              Rp {result.fee.toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
-                     {/* QR Code Button */}
-                     <button
-                       onClick={() => setShowQR(true)}
-                       className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 shadow-md text-sm"
-                     >
-                       <QrCode className="w-4 h-4" />
-                       Tampilkan QR Code
-                     </button>
-                   </>
-                 )}
-
-                 {/* Timeline */}
-                 <div className="space-y-2 pt-1">
-                   <div className="flex gap-2">
-                     <div className="mt-0.5"><Clock className="w-3.5 h-3.5 text-slate-400" /></div>
-                     <div>
-                       <p className="text-xs font-semibold text-slate-700">Arrived at Reception</p>
-                       <p className="text-[10px] text-slate-500">{new Date(result.pkg.dates.arrived).toLocaleString()}</p>
-                     </div>
-                   </div>
-                   {result.pkg.dates.picked && (
-                     <div className="flex gap-2">
-                       <div className="mt-0.5"><CheckCircle className="w-3.5 h-3.5 text-green-500" /></div>
-                       <div>
-                         <p className="text-xs font-semibold text-slate-700">Picked Up</p>
-                         <p className="text-[10px] text-slate-500">{new Date(result.pkg.dates.picked).toLocaleString()}</p>
-                       </div>
-                     </div>
-                   )}
-                 </div>
+                {/* QR Button for selected package */}
+                {selectedResult && selectedResult.pkg.status === 'ARRIVED' && (
+                  <button
+                    onClick={() => setShowQR(true)}
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 shadow-md text-sm"
+                  >
+                    <QrCode className="w-4 h-4" />
+                    Tampilkan QR untuk {selectedResult.pkg.trackingNumber}
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -199,7 +220,7 @@ const Tracking: React.FC = () => {
       </div>
 
       {/* QR Code Modal */}
-      {showQR && result && (
+      {showQR && selectedResult && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowQR(false)}>
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full relative" onClick={(e) => e.stopPropagation()}>
             <button
