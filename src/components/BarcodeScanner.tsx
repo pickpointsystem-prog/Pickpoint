@@ -43,21 +43,40 @@ const BarcodeScanner: FC<BarcodeScannerProps> = ({ isOpen, onClose, onScan, auto
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
+      // List devices for debugging
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        console.log('[BarcodeScanner] Video devices:', devices.filter(d => d.kind === 'videoinput'));
+      } catch (e) {
+        console.warn('[BarcodeScanner] enumerateDevices failed:', e);
+      }
+
+      const constraints: MediaStreamConstraints = {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      };
+      let stream: MediaStream | null = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err: any) {
+        console.warn('[BarcodeScanner] First getUserMedia failed, retrying with generic video:true', err);
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
       streamRef.current = stream;
-      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        await videoRef.current.play().catch(e => console.warn('Video play blocked:', e));
         setScanning(true);
         setUseCamera(true);
         requestAnimationFrame(tick);
       }
-    } catch (err) {
-      console.error('Camera error:', err);
-      alert('Tidak dapat mengakses kamera. Gunakan input manual.');
+    } catch (err: any) {
+      console.error('[BarcodeScanner] Camera error:', err);
+      alert(`Tidak dapat mengakses kamera. (${err?.name}) ${err?.message}`);
     }
   };
 

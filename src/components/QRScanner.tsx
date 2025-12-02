@@ -21,21 +21,52 @@ const QRScanner: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   }, []);
 
   const startScanning = async () => {
+    setError('');
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
+      // Log available devices for diagnostics
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        console.log('[QRScanner] Available video input devices:', devices.filter(d => d.kind === 'videoinput'));
+      } catch (e) {
+        console.warn('[QRScanner] enumerateDevices failed:', e);
+      }
+
+      const constraints: MediaStreamConstraints = {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      };
+
+      let stream: MediaStream | null = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err: any) {
+        console.warn('[QRScanner] First getUserMedia attempt failed, retrying without facingMode...', err);
+        // Fallback: remove facingMode (iOS / some desktop browsers)
+        const fallbackConstraints: MediaStreamConstraints = { video: true, audio: false };
+        stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+      }
+
       streamRef.current = stream;
-      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        await videoRef.current.play().catch(e => console.warn('Video play blocked:', e));
         setScanning(true);
         requestAnimationFrame(tick);
       }
-    } catch (err) {
-      setError('Tidak dapat mengakses kamera. Pastikan izin kamera diberikan.');
-      console.error('Camera error:', err);
+    } catch (err: any) {
+      const reason = err?.name === 'NotAllowedError'
+        ? 'Izin kamera ditolak. Klik icon kunci di address bar untuk mengizinkan.'
+        : err?.name === 'NotFoundError'
+          ? 'Tidak ada perangkat kamera terdeteksi.'
+          : err?.name === 'OverconstrainedError'
+            ? 'Kamera tidak mendukung resolusi/facingMode yang diminta.'
+            : 'Tidak dapat mengakses kamera.';
+      setError(`${reason}\nDetail: ${err?.name || 'Unknown'} - ${err?.message || ''}`);
+      console.error('[QRScanner] Camera error:', err);
     }
   };
 
