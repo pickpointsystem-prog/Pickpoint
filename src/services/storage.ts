@@ -192,18 +192,41 @@ export const StorageService = {
     const settings = get<AppSettings>(SEED_KEYS.SETTINGS, INITIAL_SETTINGS);
 
     try {
-      const results = await Promise.all([
-        SupabaseService.upsertTable('locations', locations),
-        SupabaseService.upsertTable('users', users),
-        SupabaseService.upsertTable('packages', packages),
-        SupabaseService.upsertTable('customers', customers),
-        SupabaseService.upsertTable('activities', activities),
-        SupabaseService.upsertTable('settings', [settings]),
-      ]);
+      // Sequential upsert to respect foreign key dependencies
+      // 1. Settings first (no dependencies)
+      const settingsResult = await SupabaseService.upsertTable('settings', [settings]);
+      if (!settingsResult.success) {
+        return { ok: false, message: `Settings sync failed: ${settingsResult.error}` };
+      }
 
-      const failed = results.filter(r => !r.success);
-      if (failed.length > 0) {
-        return { ok: false, message: `${failed.length} table(s) failed to sync` };
+      // 2. Locations (no dependencies)
+      const locationsResult = await SupabaseService.upsertTable('locations', locations);
+      if (!locationsResult.success) {
+        return { ok: false, message: `Locations sync failed: ${locationsResult.error}` };
+      }
+
+      // 3. Users (depends on locations)
+      const usersResult = await SupabaseService.upsertTable('users', users);
+      if (!usersResult.success) {
+        return { ok: false, message: `Users sync failed: ${usersResult.error}` };
+      }
+
+      // 4. Customers (depends on locations)
+      const customersResult = await SupabaseService.upsertTable('customers', customers);
+      if (!customersResult.success) {
+        return { ok: false, message: `Customers sync failed: ${customersResult.error}` };
+      }
+
+      // 5. Packages (depends on locations)
+      const packagesResult = await SupabaseService.upsertTable('packages', packages);
+      if (!packagesResult.success) {
+        return { ok: false, message: `Packages sync failed: ${packagesResult.error}` };
+      }
+
+      // 6. Activities (no foreign key dependencies)
+      const activitiesResult = await SupabaseService.upsertTable('activities', activities);
+      if (!activitiesResult.success) {
+        return { ok: false, message: `Activities sync failed: ${activitiesResult.error}` };
       }
 
       return {
