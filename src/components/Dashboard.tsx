@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { User, Package, DashboardStats, PackageSize, Customer, Location } from '../types';
 import { StorageService } from '../services/storage';
@@ -14,6 +13,7 @@ import {
 import { twMerge } from 'tailwind-merge';
 import QRScanner from './QRScanner';
 import BarcodeScanner from './BarcodeScanner';
+import BackgroundScanner from './BackgroundScanner';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
@@ -112,6 +112,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [selectedPickupIds, setSelectedPickupIds] = useState<string[]>([]);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [isPhotoVisible, setIsPhotoVisible] = useState(false);
+  
+  // Background scanning
+  const [backgroundScanEnabled, setBackgroundScanEnabled] = useState(false);
+  const dashboardScanEnabled = user.role === 'STAFF';
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -156,6 +160,27 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, [filter, user]);
+
+  // Background scanning control: enable when Add Modal is open
+  useEffect(() => {
+    setBackgroundScanEnabled(isAddModalOpen);
+  }, [isAddModalOpen]);
+
+  // Handler untuk QR customer terdeteksi - auto-open QR Scanner modal
+  const handleQRDetected = (data: string) => {
+    console.log('[Dashboard] Customer QR detected, auto-opening scanner:', data);
+    setIsQRScannerOpen(true);
+    setBackgroundScanEnabled(false); // Stop background scanning
+  };
+
+  // Handler untuk barcode AWB terdeteksi - auto-fill form
+  const handleBarcodeDetected = (data: string) => {
+    console.log('[Dashboard] AWB barcode detected, auto-filling:', data);
+    if (isAddModalOpen) {
+      setFormData(prev => ({ ...prev, tracking: data }));
+    }
+    setBackgroundScanEnabled(false); // Stop background scanning after detection
+  };
 
   const calculateStats = (allPkgs: Package[], allCusts: Customer[]) => {
     const relevantPkgs = user.role === 'STAFF'
@@ -1012,8 +1037,25 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
       {/* 1c. QR Scanner Modal for Pickup */}
       {isQRScannerOpen && (
-        <QRScanner onClose={() => { setIsQRScannerOpen(false); loadData(); }} />
+        <QRScanner 
+          onClose={() => { 
+            setIsQRScannerOpen(false); 
+            loadData(); 
+          }} 
+        />
       )}
+
+      {/* Dashboard-wide Background Scanner for QR customer detection */}
+      <BackgroundScanner
+        enabled={dashboardScanEnabled && !isQRScannerOpen}
+        onQRDetected={handleQRDetected}
+      />
+
+      {/* Background Scanner - Runs when Add Modal open for auto-fill AWB */}
+      <BackgroundScanner
+        enabled={backgroundScanEnabled}
+        onBarcodeDetected={handleBarcodeDetected}
+      />
 
       {/* 2. DETAIL & ACTION MODAL */}
       {selectedPkg && (
@@ -1180,8 +1222,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                   <button
                     onClick={() => handleDestroy(selectedPkg)}
                     className={twMerge(actionButtonClass, 'h-10 w-10 rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700')}
-                    title="Tandai destroyed"
-                    aria-label="Tandai destroyed"
+                    title="Tandai hilang/dimusnahkan"
+                    aria-label="Tandai hilang/dimusnahkan"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
