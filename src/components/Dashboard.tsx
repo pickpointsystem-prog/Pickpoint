@@ -1005,6 +1005,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             setFormData(prev => ({ ...prev, tracking: code }));
             setIsBarcodeScannerOpen(false);
           }}
+          autoStart
+          hideManual
         />
       )}
 

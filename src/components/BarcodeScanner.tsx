@@ -5,11 +5,13 @@ interface BarcodeScannerProps {
   isOpen: boolean;
   onClose: () => void;
   onScan: (code: string) => void;
+  autoStart?: boolean;
+  hideManual?: boolean;
 }
 
-const BarcodeScanner: FC<BarcodeScannerProps> = ({ isOpen, onClose, onScan }) => {
+const BarcodeScanner: FC<BarcodeScannerProps> = ({ isOpen, onClose, onScan, autoStart = false, hideManual = false }) => {
   const [manualCode, setManualCode] = useState('');
-  const [useCamera, setUseCamera] = useState(false);
+  const [useCamera, setUseCamera] = useState<boolean>(hideManual ? true : false);
   const [scanning, setScanning] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -22,14 +24,22 @@ const BarcodeScanner: FC<BarcodeScannerProps> = ({ isOpen, onClose, onScan }) =>
       stopCamera();
       return;
     }
-    const timeout = window.setTimeout(() => {
-      if (!useCamera) inputRef.current?.focus();
-    }, 150);
+    if (autoStart || hideManual) {
+      setUseCamera(true);
+      startCamera();
+    } else {
+      const timeout = window.setTimeout(() => {
+        if (!useCamera) inputRef.current?.focus();
+      }, 150);
+      return () => {
+        window.clearTimeout(timeout);
+        stopCamera();
+      };
+    }
     return () => {
-      window.clearTimeout(timeout);
       stopCamera();
     };
-  }, [isOpen, useCamera]);
+  }, [isOpen]);
 
   const startCamera = async () => {
     try {
@@ -110,33 +120,35 @@ const BarcodeScanner: FC<BarcodeScannerProps> = ({ isOpen, onClose, onScan }) =>
         </div>
 
         {/* Toggle Camera / Manual */}
-        <div className="p-4 border-b border-slate-200 flex gap-2">
-          <button
-            type="button"
-            onClick={() => { stopCamera(); setUseCamera(false); }}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-              !useCamera 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Manual Input
-          </button>
-          <button
-            type="button"
-            onClick={startCamera}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-              useCamera 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Scan Kamera
-          </button>
-        </div>
+        {!hideManual && (
+          <div className="p-4 border-b border-slate-200 flex gap-2">
+            <button
+              type="button"
+              onClick={() => { stopCamera(); setUseCamera(false); }}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                !useCamera 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Manual Input
+            </button>
+            <button
+              type="button"
+              onClick={startCamera}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                useCamera 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Scan Kamera
+            </button>
+          </div>
+        )}
 
         <div className="p-4">
-          {!useCamera ? (
+          {!useCamera && !hideManual ? (
             // Manual Input Mode
             <>
               <p className="mb-4 text-sm text-slate-500">
@@ -181,7 +193,7 @@ const BarcodeScanner: FC<BarcodeScannerProps> = ({ isOpen, onClose, onScan }) =>
                 
                 {scanning && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-64 h-64 border-4 border-blue-500 rounded-2xl animate-pulse"></div>
+                    <div className="w-48 h-48 border-4 border-blue-500 rounded-2xl animate-pulse"></div>
                   </div>
                 )}
               </div>

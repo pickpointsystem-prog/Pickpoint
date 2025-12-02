@@ -131,22 +131,22 @@ const QRScanner: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3">
+      <div className="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Camera className="w-5 h-5 text-white" />
-            <h2 className="font-bold text-white text-lg">Scan QR Paket</h2>
+            <Camera className="w-4 h-4 text-white" />
+            <h2 className="font-semibold text-white text-base">Scan QR Paket</h2>
           </div>
-          <button onClick={onClose} className="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="text-white hover:bg-white/20 p-1.5 rounded-lg">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Scanner Area */}
         {!scannedData && (
-          <div className="p-4">
+          <div className="p-3">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
                 {error}
@@ -163,12 +163,12 @@ const QRScanner: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               
               {scanning && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-64 h-64 border-4 border-blue-500 rounded-2xl animate-pulse"></div>
+                  <div className="w-40 h-40 border-4 border-blue-500 rounded-2xl animate-pulse"></div>
                 </div>
               )}
             </div>
             
-            <p className="text-center text-sm text-slate-600 mt-4">
+            <p className="text-center text-xs text-slate-600 mt-3">
               Arahkan kamera ke QR Code paket
             </p>
           </div>
@@ -176,46 +176,46 @@ const QRScanner: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
         {/* Scanned Result */}
         {scannedData && (
-          <div className="p-6 space-y-4">
+          <div className="p-4 space-y-3">
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
-              <h3 className="font-bold text-xl text-slate-800">Paket Ditemukan!</h3>
+              <h3 className="font-bold text-lg text-slate-800">Paket Ditemukan!</h3>
             </div>
 
-            <div className="bg-slate-50 rounded-xl p-4 space-y-3">
+            <div className="bg-slate-50 rounded-xl p-3 space-y-2">
               <div className="flex items-start gap-3">
-                <PackageIcon className="w-5 h-5 text-slate-400 mt-0.5" />
+                <PackageIcon className="w-4 h-4 text-slate-400 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-xs text-slate-500 font-bold uppercase">Tracking Number</p>
                   <p className="font-mono font-bold text-slate-800">{scannedData.pkg.trackingNumber}</p>
                 </div>
               </div>
 
-              <div className="border-t border-slate-200 pt-3">
+              <div className="border-t border-slate-200 pt-2">
                 <p className="text-xs text-slate-500 font-bold uppercase mb-1">Penerima</p>
                 <p className="font-bold text-slate-800">{scannedData.pkg.recipientName}</p>
                 <p className="text-sm text-slate-600">{scannedData.pkg.recipientPhone}</p>
                 <p className="text-sm text-slate-600">Unit {scannedData.pkg.unitNumber}</p>
               </div>
 
-              <div className="border-t border-slate-200 pt-3">
+              <div className="border-t border-slate-200 pt-2">
                 <p className="text-xs text-slate-500 font-bold uppercase mb-1">Biaya Penyimpanan</p>
-                <p className="text-2xl font-bold text-orange-600">Rp {scannedData.fee.toLocaleString()}</p>
+                <p className="text-xl font-bold text-orange-600">Rp {scannedData.fee.toLocaleString()}</p>
               </div>
             </div>
 
             <button
               onClick={handlePickup}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition-colors shadow-lg"
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-colors shadow-lg"
             >
               Konfirmasi Pickup
             </button>
             
             <button
               onClick={onClose}
-              className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-3 rounded-xl transition-colors"
+              className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 rounded-xl transition-colors"
             >
               Batal
             </button>
