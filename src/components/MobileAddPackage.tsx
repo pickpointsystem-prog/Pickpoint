@@ -377,59 +377,61 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
         title="Scan AWB / Barcode"
       />
 
-      {/* Camera Modal */}
+      {/* Camera Modal - Setengah Layar */}
       {isTakingPhoto && (
-        <div className="fixed inset-0 bg-black z-[100] flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 bg-gradient-to-b from-black/90 to-black/60">
-            <h3 className="text-white font-bold text-lg">Ambil Foto Paket</h3>
-            <button
-              type="button"
-              onClick={() => setIsTakingPhoto(false)}
-              className="text-white p-2 hover:bg-white/20 rounded-lg transition-colors"
-              aria-label="Tutup kamera"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          
-          {/* Camera Preview */}
-          <div className="flex-1 relative bg-slate-900">
-            <Webcam
-              ref={webcamRef}
-              audio={false}
-              screenshotFormat="image/jpeg"
-              videoConstraints={videoConstraints}
-              className="w-full h-full object-cover"
-              style={{ transform: 'scaleX(1)' }}
-            />
-            {/* Grid overlay for composition guide */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="w-full h-full grid grid-cols-3 grid-rows-3">
-                <div className="border border-white/20"></div>
-                <div className="border border-white/20"></div>
-                <div className="border border-white/20"></div>
-                <div className="border border-white/20"></div>
-                <div className="border border-white/20"></div>
-                <div className="border border-white/20"></div>
-                <div className="border border-white/20"></div>
-                <div className="border border-white/20"></div>
-                <div className="border border-white/20"></div>
+        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-black rounded-3xl overflow-hidden shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 bg-gradient-to-b from-black/90 to-black/60">
+              <h3 className="text-white font-bold text-lg">📸 Ambil Foto</h3>
+              <button
+                type="button"
+                onClick={() => setIsTakingPhoto(false)}
+                className="text-white p-2 hover:bg-white/20 rounded-lg transition-colors"
+                aria-label="Tutup kamera"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            {/* Camera Preview - Setengah tinggi */}
+            <div className="relative bg-slate-900 aspect-[3/4]">
+              <Webcam
+                ref={webcamRef}
+                audio={false}
+                screenshotFormat="image/jpeg"
+                videoConstraints={videoConstraints}
+                className="w-full h-full object-cover"
+                style={{ transform: 'scaleX(1)' }}
+              />
+              {/* Grid overlay for composition guide */}
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="w-full h-full grid grid-cols-3 grid-rows-3">
+                  <div className="border border-white/20"></div>
+                  <div className="border border-white/20"></div>
+                  <div className="border border-white/20"></div>
+                  <div className="border border-white/20"></div>
+                  <div className="border border-white/20"></div>
+                  <div className="border border-white/20"></div>
+                  <div className="border border-white/20"></div>
+                  <div className="border border-white/20"></div>
+                  <div className="border border-white/20"></div>
+                </div>
               </div>
             </div>
-          </div>
-          
-          {/* Shutter Button */}
-          <div className="p-8 bg-gradient-to-t from-black/90 to-black/60 flex flex-col items-center gap-4">
-            <button
-              type="button"
-              onClick={capturePhoto}
-              className="bg-white rounded-full p-5 shadow-2xl active:scale-95 transition-transform"
-              aria-label="Ambil foto"
-            >
-              <Camera className="w-10 h-10 text-blue-600" />
-            </button>
-            <p className="text-white/80 text-sm">Tap untuk mengambil foto</p>
+            
+            {/* Shutter Button - Jelas Terlihat */}
+            <div className="p-6 bg-black flex flex-col items-center gap-3">
+              <button
+                type="button"
+                onClick={capturePhoto}
+                className="bg-white rounded-full p-5 shadow-2xl active:scale-95 transition-transform hover:scale-105"
+                aria-label="Ambil foto"
+              >
+                <Camera className="w-10 h-10 text-blue-600" />
+              </button>
+              <p className="text-white/80 text-sm font-medium">Tap untuk mengambil foto</p>
+            </div>
           </div>
         </div>
       )}
