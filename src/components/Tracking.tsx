@@ -58,10 +58,9 @@ const Tracking: React.FC = () => {
     setResults([]);
 
     const packages = StorageService.getPackages();
-    // Cari paket dengan tracking ID atau ID
+    // Pencarian publik: HANYA berdasarkan tracking number (AWB)
     const found = packages.find(p => 
-      p.trackingNumber.trim().toLowerCase() === trimmed.toLowerCase() ||
-      p.id.toLowerCase() === trimmed.toLowerCase()
+      p.trackingNumber.trim().toLowerCase() === trimmed.toLowerCase()
     );
 
     if (found) {

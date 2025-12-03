@@ -76,7 +76,8 @@ export const WhatsAppService = {
     const protocol = isLocalDomain ? 'http' : 'https';
     const publicUrl = `${protocol}://${sanitizedDomain}`;
     
-    const pickupLink = `${publicUrl}/tracking?id=${pkg.trackingNumber}`;
+    // Link pembayaran untuk notifikasi paket baru
+    const paymentLink = `${publicUrl}/payment?ids=${pkg.id}`;
     
     let message = settings.waTemplatePackage || '';
     message = message
@@ -84,7 +85,7 @@ export const WhatsAppService = {
       .replace('{tracking}', pkg.trackingNumber)
       .replace('{location}', location.name)
       .replace('{code}', pkg.trackingNumber)
-      .replace('{link}', pickupLink);
+      .replace('{link}', paymentLink);
 
     const result = await sendRawMessage(pkg.recipientPhone, message, settings);
     
@@ -93,7 +94,7 @@ export const WhatsAppService = {
         environment: config.env,
         recipient: pkg.recipientPhone,
         tracking: pkg.trackingNumber,
-        link: pickupLink,
+        link: paymentLink,
         success: result.success
       });
     }
