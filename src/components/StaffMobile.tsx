@@ -4,6 +4,7 @@ import { PackagePlus, QrCode } from 'lucide-react';
 import SimpleScanner from './SimpleScanner';
 import MobileAddPackage from './MobileAddPackage';
 import { realtimeService } from '../services/realtime';
+import { realtimeNet } from '../services/realtime_net';
 
 interface StaffMobileProps {
   user: User;
@@ -107,6 +108,8 @@ const StaffMobile: React.FC<StaffMobileProps> = ({ user, onLogout }) => {
           console.log('[StaffMobile] QR Scanned:', text);
           // Broadcast ke desktop untuk membuka popup
           realtimeService.broadcast('QR_SCANNED', text);
+          // Cross-device broadcast via Supabase Realtime
+          realtimeNet.broadcast('QR_SCANNED', text);
           alert('QR berhasil di-scan. Cek di desktop untuk proses pickup.');
           setIsQRScannerOpen(false);
         }}

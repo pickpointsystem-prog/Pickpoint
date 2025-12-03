@@ -155,6 +155,40 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
 
   return (
     <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto">
+      {isTakingPhoto && (
+        <div className="fixed inset-0 z-[100] flex flex-col bg-black">
+          <div className="flex items-center justify-between p-4 bg-black/80">
+            <h3 className="text-white font-semibold">Ambil Foto Paket</h3>
+            <button
+              type="button"
+              onClick={() => setIsTakingPhoto(false)}
+              className="text-white p-2"
+              aria-label="Tutup kamera"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="flex-1 relative">
+            <Webcam
+              ref={webcamRef}
+              audio={false}
+              screenshotFormat="image/jpeg"
+              videoConstraints={videoConstraints}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="p-6 bg-black/80 flex items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={capturePhoto}
+              className="bg-white text-slate-800 rounded-full p-4 shadow-lg"
+              aria-label="Ambil foto"
+            >
+              <Camera className="w-8 h-8" />
+            </button>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="sticky top-0 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between z-10">
         <h2 className="font-bold text-lg text-slate-800">Tambah Paket</h2>

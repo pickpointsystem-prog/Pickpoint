@@ -5,6 +5,7 @@ import { PricingService } from '../services/pricing';
 import { WhatsAppService } from '../services/whatsapp';
 import { COURIER_OPTIONS } from '../constants';
 import { realtimeService } from '../services/realtime';
+import { realtimeNet } from '../services/realtime_net';
 import { 
   Package as PackageIcon, DollarSign, Users, Activity, 
   ArrowUpRight, ArrowDownRight, Search, Plus, 
@@ -119,6 +120,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
   const [selectedPickupIds, setSelectedPickupIds] = useState<string[]>([]);
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [isPhotoVisible, setIsPhotoVisible] = useState(false);
+  const [scannedQRData, setScannedQRData] = useState<any | null>(null);
   
   // Background scanning for dashboard QR detection
   // const dashboardScanEnabled = user.role === 'STAFF';
@@ -176,14 +178,26 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
   }, [openAddModal]);
 
   // Listen for realtime events from other devices (mobile scan → desktop popup)
-  useEffect(() => {
+    useEffect(() => {
     const unsubscribe = realtimeService.on('QR_SCANNED', (qrData: string) => {
       console.log('[Dashboard] Received QR_SCANNED from mobile:', qrData);
       
       // Cari paket berdasarkan QR data
       const code = (qrData || '').trim();
       if (!code) return;
-      const lower = code.toLowerCase();
+      let lower = code.toLowerCase();
+
+      // Parse JSON QR if applicable
+      let parsed: any | null = null;
+      if (code.startsWith('{') && code.endsWith('}')) {
+        try {
+          parsed = JSON.parse(code);
+        } catch {}
+      }
+      const tryTracking = parsed?.tracking || parsed?.awb || null;
+      // const tryPhone = parsed?.phone || parsed?.recipientPhone || null;
+      // const tryName = parsed?.name || parsed?.recipientName || null;
+      if (tryTracking) lower = String(tryTracking).toLowerCase();
       
       const candidatePkgs = packages.filter(p => {
         const matches = p.trackingNumber.toLowerCase() === lower ||
@@ -197,11 +211,49 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
       if (candidatePkgs.length > 0) {
         setSelectedPkg(candidatePkgs[0]);
       } else {
-        alert('Paket tidak ditemukan untuk kode: ' + code);
+        // Fallback: show scanned data modal for manual action
+        setScannedQRData(parsed || code);
       }
     });
 
     return () => unsubscribe();
+    }, [packages, user]);
+
+  // Cross-device events via Supabase Realtime
+  useEffect(() => {
+    realtimeNet.subscribe();
+    const off = realtimeNet.on('QR_SCANNED', (qrData: string) => {
+      console.log('[Dashboard-Net] Received QR_SCANNED:', qrData);
+      const code = (qrData || '').trim();
+      if (!code) return;
+      let lower = code.toLowerCase();
+
+      // Parse JSON QR if applicable
+      let parsed: any | null = null;
+      if (code.startsWith('{') && code.endsWith('}')) {
+        try {
+          parsed = JSON.parse(code);
+        } catch {}
+      }
+      const tryTracking = parsed?.tracking || parsed?.awb || null;
+      // const tryPhone = parsed?.phone || parsed?.recipientPhone || null;
+      // const tryName = parsed?.name || parsed?.recipientName || null;
+      if (tryTracking) lower = String(tryTracking).toLowerCase();
+      const candidatePkgs = packages.filter(p => {
+        const matches = p.trackingNumber.toLowerCase() === lower ||
+          p.trackingNumber.toLowerCase().includes(lower) ||
+          p.recipientPhone === code ||
+          p.recipientName.toLowerCase().includes(lower);
+        const locationOk = user.role === 'STAFF' ? p.locationId === user.locationId : true;
+        return matches && locationOk && p.status === 'ARRIVED';
+      });
+      if (candidatePkgs.length > 0) {
+        setSelectedPkg(candidatePkgs[0]);
+      } else {
+        setScannedQRData(parsed || code);
+      }
+    });
+    return () => { off(); };
   }, [packages, user]);
 
 
@@ -621,6 +673,47 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
 
   return (
     <div className="space-y-10">
+      {scannedQRData && (
+        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" onClick={() => setScannedQRData(null)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="border-b px-4 py-3 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-800">Data QR Terscan</h3>
+              <button className="text-slate-500 hover:text-slate-700" onClick={() => setScannedQRData(null)}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              <pre className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs overflow-auto">
+{typeof scannedQRData === 'string' ? scannedQRData : JSON.stringify(scannedQRData, null, 2)}
+              </pre>
+              <div className="flex gap-2">
+                <button
+                  className="flex-1 bg-blue-600 text-white rounded-lg px-3 py-2 font-medium"
+                  onClick={() => {
+                    const val = typeof scannedQRData === 'string' ? scannedQRData : (scannedQRData.tracking || scannedQRData.phone || scannedQRData.name || '');
+                    setSearch(String(val));
+                    setScannedQRData(null);
+                  }}
+                >
+                  Cari di daftar paket
+                </button>
+                <button
+                  className="flex-1 bg-slate-100 text-slate-700 rounded-lg px-3 py-2 font-medium"
+                  onClick={async () => {
+                    const text = typeof scannedQRData === 'string' ? scannedQRData : JSON.stringify(scannedQRData);
+                    try {
+                      await navigator.clipboard.writeText(text);
+                      alert('Data QR disalin ke clipboard');
+                    } catch {}
+                  }}
+                >
+                  Salin data
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Dashboard Header */}
       <div className="relative overflow-hidden rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-sm">
         <div className="absolute -left-12 -top-16 h-44 w-44 rounded-full bg-blue-100/60 blur-3xl" aria-hidden="true" />
