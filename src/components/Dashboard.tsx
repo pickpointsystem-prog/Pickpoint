@@ -146,6 +146,42 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectAllRef = useRef<HTMLInputElement>(null);
 
+  // Debug: Log modal state changes
+  useEffect(() => {
+    console.log('[Dashboard] Modal states:', {
+      scannedQRData: !!scannedQRData,
+      isQRScannerOpen,
+      isBarcodeScannerOpen,
+      selectedPkg: !!selectedPkg
+    });
+  }, [scannedQRData, isQRScannerOpen, isBarcodeScannerOpen, selectedPkg]);
+
+  // Handle ESC key to close all modals
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (scannedQRData) {
+          console.log('[Dashboard] ESC - closing scannedQRData');
+          setScannedQRData(null);
+        }
+        if (isQRScannerOpen) {
+          console.log('[Dashboard] ESC - closing QR scanner');
+          setIsQRScannerOpen(false);
+        }
+        if (isBarcodeScannerOpen) {
+          console.log('[Dashboard] ESC - closing barcode scanner');
+          setIsBarcodeScannerOpen(false);
+        }
+        if (selectedPkg) {
+          console.log('[Dashboard] ESC - closing package detail');
+          setSelectedPkg(null);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [scannedQRData, isQRScannerOpen, isBarcodeScannerOpen, selectedPkg]);
+
   // --- LOADING DATA ---
   const loadData = () => {
     const allPkgs = StorageService.getPackages();
@@ -219,11 +255,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
     return () => unsubscribe();
     }, [packages, user]);
 
-  // Cross-device events via Supabase Realtime
+  // Cross-device events via Supabase Realtime (filtered per user)
   useEffect(() => {
     realtimeNet.subscribe();
+    // Filter: hanya terima event dari user yang sama (staff A HP -> staff A desktop)
     const off = realtimeNet.on('QR_SCANNED', (qrData: string) => {
-      console.log('[Dashboard-Net] Received QR_SCANNED:', qrData);
+      console.log('[Dashboard-Net] Received QR_SCANNED from same user:', qrData);
       const code = (qrData || '').trim();
       if (!code) return;
       let lower = code.toLowerCase();
@@ -252,7 +289,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
       } else {
         setScannedQRData(parsed || code);
       }
-    });
+    }, user.id); // Pass user.id sebagai filter - hanya terima dari user yang sama
     return () => { off(); };
   }, [packages, user]);
 
@@ -357,7 +394,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
     setIsAutoFilled(false);
 
     if (val.length > 0) {
-      const matches = customers.filter(c => c.name.toLowerCase().includes(val.toLowerCase()));
+      // Filter customer: staff hanya lihat customer di lokasi sendiri
+      let matches = customers.filter(c => c.name.toLowerCase().includes(val.toLowerCase()));
+      if (user.role === 'STAFF' && user.locationId) {
+        matches = matches.filter(c => c.locationId === user.locationId);
+      }
       setFilteredCustomers(matches);
       setShowSuggestions(true);
     } else {
@@ -470,6 +511,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
       setSelectedPickupIds(prev => prev.filter(id => id !== pkg.id));
       loadData();
     }
+  };
+
+  const handleSendPaymentLink = () => {
+    const candidates = packages.filter(p => selectedPickupIds.includes(p.id) && p.status === 'ARRIVED');
+    if (candidates.length === 0) {
+      alert('Pilih paket untuk membuat link pembayaran.');
+      return;
+    }
+
+    const packageIds = candidates.map(p => p.id).join(',');
+    const paymentLink = `${window.location.origin}/payment?ids=${packageIds}`;
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(paymentLink).then(() => {
+      alert(`✅ Link pembayaran berhasil disalin!\n\n${paymentLink}\n\nKirim link ini ke penerima paket.`);
+    }).catch(() => {
+      alert(`Link pembayaran:\n\n${paymentLink}\n\nSalin link ini dan kirim ke penerima.`);
+    });
   };
 
   const handleBulkPickup = () => {
@@ -671,10 +730,37 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
 
   const allSelectableChecked = selectableIds.length > 0 && selectableIds.every(id => selectedPickupIds.includes(id));
 
+  // Emergency close untuk semua modal
+  const handleEmergencyClose = () => {
+    setScannedQRData(null);
+    setIsQRScannerOpen(false);
+    setIsBarcodeScannerOpen(false);
+    setSelectedPkg(null);
+    console.log('[Dashboard] Emergency close executed - all modals closed');
+  };
+
   return (
     <div className="space-y-10">
+      {/* Emergency Close Button - Floating */}
+      {(scannedQRData || isQRScannerOpen || isBarcodeScannerOpen || selectedPkg) && (
+        <button
+          onClick={handleEmergencyClose}
+          className="fixed bottom-4 right-4 z-[999] bg-red-600 hover:bg-red-700 text-white p-4 rounded-full shadow-2xl flex items-center gap-2 font-bold animate-pulse"
+          title="Tutup semua modal"
+        >
+          <X className="w-6 h-6" />
+          <span className="hidden sm:inline">TUTUP</span>
+        </button>
+      )}
+
       {scannedQRData && (
-        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" onClick={() => setScannedQRData(null)}>
+        <div 
+          className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" 
+          onClick={(e) => {
+            e.stopPropagation();
+            setScannedQRData(null);
+          }}
+        >
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
             <div className="border-b px-4 py-3 flex items-center justify-between">
               <h3 className="font-semibold text-slate-800">Data QR Terscan</h3>
@@ -787,6 +873,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
               className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:from-purple-700 hover:to-purple-800"
             >
               <Scan className="w-4 h-4" /> Scan QR
+            </button>
+            <button
+              type="button"
+              onClick={handleSendPaymentLink}
+              disabled={selectedPickupIds.length === 0}
+              className={twMerge(
+                "flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-semibold shadow-sm transition-colors",
+                selectedPickupIds.length > 0
+                  ? "border-green-200 bg-green-50/80 text-green-700 hover:bg-green-100"
+                  : "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
+              )}
+            >
+              <Wallet className="w-4 h-4" /> Kirim Link Bayar ({selectedPickupIds.length})
             </button>
             <button
               type="button"

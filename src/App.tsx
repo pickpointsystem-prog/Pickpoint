@@ -7,6 +7,7 @@ import { ToastProvider } from './context/ToastContext';
 import Landing from './components/Landing';
 import Tracking from './components/Tracking';
 import SelfRegistration from './components/SelfRegistration';
+import PaymentPage from './components/PaymentPage';
 import config, { logConfig } from './config/environment';
 
 logConfig();
@@ -30,6 +31,7 @@ const App: React.FC = () => {
             <Route path="/" element={isDashboardDomain ? <Navigate to="/admin" replace /> : <Landing />} />
             <Route path="/tracking" element={<Tracking />} />
             <Route path="/form" element={<SelfRegistration />} />
+            <Route path="/payment" element={<PaymentPage />} />
             {isDashboardDomain && <Route path="/admin/*" element={<AdminApp />} />}
             {isDashboardDomain && <Route path="/mobile" element={<MobileStaffApp />} />}
             <Route path="*" element={<Navigate to={isDashboardDomain ? "/admin" : "/"} replace />} />

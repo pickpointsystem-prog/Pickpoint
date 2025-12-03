@@ -108,8 +108,8 @@ const StaffMobile: React.FC<StaffMobileProps> = ({ user, onLogout }) => {
           console.log('[StaffMobile] QR Scanned:', text);
           // Broadcast ke desktop untuk membuka popup
           realtimeService.broadcast('QR_SCANNED', text);
-          // Cross-device broadcast via Supabase Realtime
-          realtimeNet.broadcast('QR_SCANNED', text);
+          // Cross-device broadcast via Supabase Realtime (dengan userId untuk filter per staff)
+          realtimeNet.broadcast('QR_SCANNED', text, user.id);
           alert('QR berhasil di-scan. Cek di desktop untuk proses pickup.');
           setIsQRScannerOpen(false);
         }}

@@ -32,16 +32,48 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [isAutoFilled, setIsAutoFilled] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [countdown, setCountdown] = useState(3);
   const webcamRef = useRef<Webcam>(null);
 
   useEffect(() => {
-    setCustomers(StorageService.getCustomers());
+    const allCustomers = StorageService.getCustomers();
+    // Filter hanya customer di lokasi petugas
+    const filteredByLocation = user.locationId 
+      ? allCustomers.filter(c => c.locationId === user.locationId)
+      : allCustomers;
+    setCustomers(filteredByLocation);
     setLocations(StorageService.getLocations());
-  }, []);
+  }, [user.locationId]);
 
   // Check if current location uses SIZE pricing
   const currentLocation = locations.find(loc => loc.id === formData.locationId);
   const showSizeField = currentLocation?.pricing?.type === 'SIZE';
+
+  // Auto-close countdown setelah success
+  useEffect(() => {
+    if (showSuccessDialog && countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (showSuccessDialog && countdown === 0) {
+      setShowSuccessDialog(false);
+      // Auto kembali ke home setelah 3 detik
+      onClose();
+    }
+  }, [showSuccessDialog, countdown, onClose]);
+
+  // Handle ESC key to close camera modal
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isTakingPhoto) setIsTakingPhoto(false);
+        if (isBarcodeScannerOpen) setIsBarcodeScannerOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isTakingPhoto, isBarcodeScannerOpen]);
 
   const handleNameInput = (val: string) => {
     if (val.trim() === '') {
@@ -83,8 +115,16 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isSubmitting) return;
+    
     if (!formData.locationId) {
       alert('Pilih lokasi terlebih dahulu.');
+      return;
+    }
+
+    // Validasi: hanya bisa input paket di lokasi sendiri
+    if (user.locationId && formData.locationId !== user.locationId) {
+      alert('⚠️ Anda hanya dapat menginput paket di lokasi Anda sendiri.');
       return;
     }
 
@@ -93,6 +133,8 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
       alert('Nomor resi/awb wajib diisi.');
       return;
     }
+
+    setIsSubmitting(true);
 
     const recipientPhone = formData.recipientPhone.trim();
 
@@ -139,8 +181,24 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
 
     StorageService.savePackage({ ...newPkg, notificationStatus: finalNotificationStatus });
     
-    alert('✅ Paket berhasil disimpan!');
+    // Trigger broadcast realtime untuk refresh dashboard
     onSuccess();
+    
+    // Reset form dan show success dialog
+    setIsSubmitting(false);
+    setFormData({
+      tracking: '',
+      recipientName: '',
+      recipientPhone: '',
+      unitNumber: '',
+      courier: COURIER_OPTIONS[0],
+      size: 'M' as PackageSize,
+      locationId: user.locationId || '',
+      photo: ''
+    });
+    setIsAutoFilled(false);
+    setShowSuccessDialog(true);
+    setCountdown(3);
   };
 
   const capturePhoto = () => {
@@ -379,8 +437,15 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
 
       {/* Camera Modal - Setengah Layar */}
       {isTakingPhoto && (
-        <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-black rounded-3xl overflow-hidden shadow-2xl">
+        <div 
+          className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsTakingPhoto(false);
+            }
+          }}
+        >
+          <div className="w-full max-w-md bg-black rounded-3xl overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="flex items-center justify-between p-4 bg-gradient-to-b from-black/90 to-black/60">
               <h3 className="text-white font-bold text-lg">📸 Ambil Foto</h3>
@@ -431,6 +496,44 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
                 <Camera className="w-10 h-10 text-blue-600" />
               </button>
               <p className="text-white/80 text-sm font-medium">Tap untuk mengambil foto</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Dialog - Auto close 3 detik */}
+      {showSuccessDialog && (
+        <div className="fixed inset-0 bg-black/70 z-[120] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            {/* Header Success */}
+            <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 text-center">
+              <div className="text-6xl mb-2">✅</div>
+              <h3 className="text-white font-bold text-xl">Paket Berhasil Disimpan!</h3>
+              <p className="text-white/90 text-sm mt-1">Auto close dalam {countdown} detik...</p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="p-6 space-y-3">
+              <button
+                onClick={() => {
+                  setShowSuccessDialog(false);
+                  setCountdown(3);
+                  // Reset untuk input lagi
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                📦 Input Paket Lagi
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowSuccessDialog(false);
+                  onClose();
+                }}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3 px-4 rounded-xl transition-colors"
+              >
+                🏠 Kembali ke Home
+              </button>
             </div>
           </div>
         </div>

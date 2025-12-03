@@ -10,9 +10,10 @@ interface NetEvent<T = any> {
   type: EventType;
   data: T;
   timestamp: number;
+  userId?: string; // ID user yang broadcast (untuk filter per staff)
 }
 
-type Listener = (data: any) => void;
+type Listener = (data: any, event?: NetEvent) => void;
 
 class RealtimeNetService {
   private listeners: Map<EventType, Set<Listener>> = new Map();
@@ -30,7 +31,8 @@ class RealtimeNetService {
       try {
         const ev = payload.payload as NetEvent;
         const cbs = this.listeners.get(ev.type);
-        if (cbs) cbs.forEach(cb => cb(ev.data));
+        // Pass both data and full event for filtering
+        if (cbs) cbs.forEach(cb => cb(ev.data, ev));
         // eslint-disable-next-line no-console
         console.log('[RealtimeNet] Received', ev);
       } catch (err) {
@@ -43,10 +45,10 @@ class RealtimeNetService {
     this.subscribed = true;
   }
 
-  /** Broadcast event to all subscribers */
-  broadcast(type: EventType, data: any) {
+  /** Broadcast event to all subscribers (with optional userId for filtering) */
+  broadcast(type: EventType, data: any, userId?: string) {
     if (!client) return;
-    const ev: NetEvent = { type, data, timestamp: Date.now() };
+    const ev: NetEvent = { type, data, timestamp: Date.now(), userId };
     client.channel('pickpoint_realtime').send({
       type: 'broadcast',
       event: 'pp_event',
@@ -56,10 +58,23 @@ class RealtimeNetService {
     console.log('[RealtimeNet] Broadcasted', ev);
   }
 
-  on(type: EventType, cb: Listener) {
+  /** 
+   * Listen to events, optionally filter by userId 
+   * If filterUserId is provided, only events from that user will trigger callback
+   */
+  on(type: EventType, cb: Listener, filterUserId?: string) {
+    const wrappedCb = (data: any, event?: NetEvent) => {
+      // Jika ada filter userId, hanya proses event dari user tersebut
+      if (filterUserId && event?.userId && event.userId !== filterUserId) {
+        console.log(`[RealtimeNet] Ignoring event from ${event.userId}, expecting ${filterUserId}`);
+        return;
+      }
+      cb(data);
+    };
+    
     if (!this.listeners.has(type)) this.listeners.set(type, new Set());
-    this.listeners.get(type)!.add(cb);
-    return () => this.listeners.get(type)?.delete(cb);
+    this.listeners.get(type)!.add(wrappedCb);
+    return () => this.listeners.get(type)?.delete(wrappedCb);
   }
 }
 
