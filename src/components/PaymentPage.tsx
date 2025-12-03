@@ -25,6 +25,15 @@ const PaymentPage: React.FC = () => {
     loadPaymentData();
   }, [searchParams]);
 
+  // Polling auto-refresh payment data jika belum dibayar
+  useEffect(() => {
+    if (isPaid) return;
+    const interval = setInterval(() => {
+      loadPaymentData();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isPaid, searchParams]);
+
   const loadPaymentData = () => {
     const idsParam = searchParams.get('ids');
     if (!idsParam) {
@@ -120,12 +129,20 @@ const PaymentPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-2xl mx-auto pt-8">
-        {/* Header */}
+        {/* Header Info Penerima */}
         <div className="bg-white rounded-3xl shadow-xl p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
             <CreditCard className="w-8 h-8 text-blue-600" />
             <h1 className="text-2xl font-bold text-slate-800">Pembayaran Paket</h1>
           </div>
+          {/* Info penerima dan lokasi */}
+          {packages.length > 0 && (
+            <div className="mb-2 text-slate-700 text-sm">
+              <span className="font-bold">Nama:</span> {packages[0].recipientName} <br />
+              <span className="font-bold">No. HP:</span> {packages[0].recipientPhone} <br />
+              <span className="font-bold">Lokasi:</span> {locations.find(l => l.id === packages[0].locationId)?.name || '-'}
+            </div>
+          )}
           <p className="text-slate-600">
             {packages.length} paket menunggu pembayaran
           </p>
@@ -206,6 +223,20 @@ const PaymentPage: React.FC = () => {
         >
           {isProcessing ? 'Memproses...' : `💰 Bayar Sekarang - Rp ${totalFee.toLocaleString('id-ID')}`}
         </button>
+
+        {/* Instruksi Pembayaran & Kontak Admin */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <h2 className="font-bold text-lg text-slate-800 mb-4">📢 Instruksi Pembayaran</h2>
+          <ul className="list-disc pl-6 text-slate-700 text-sm space-y-1">
+            <li>Pilih metode pembayaran QRIS atau Tunai.</li>
+            <li>Jika QRIS, scan QR dengan aplikasi e-wallet (GoPay, OVO, Dana, dll).</li>
+            <li>Setelah pembayaran berhasil, status paket otomatis berubah LUNAS.</li>
+            <li>Tunjukkan bukti pembayaran ke petugas saat pengambilan paket.</li>
+          </ul>
+          <div className="mt-4 text-xs text-slate-500">
+            <span className="font-bold">Kontak Admin:</span> 0812-xxxx-xxxx (WA/Telepon)
+          </div>
+        </div>
 
         <p className="text-center text-sm text-slate-500 mt-4">
           Pembayaran aman dan terenkripsi 🔒

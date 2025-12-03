@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { StorageService } from '../services/storage';
@@ -94,6 +93,15 @@ const Tracking: React.FC = () => {
       setError("Paket tidak ditemukan. Periksa kembali nomor resi/AWB Anda.");
     }
   };
+
+  // Polling auto-refresh jika ada query aktif
+  useEffect(() => {
+    if (!query) return;
+    const interval = setInterval(() => {
+      handleSearch(query);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [query]);
 
   // Auto-show detail dari URL tanpa search field
   const isDirectLink = searchParams.get('id') && !error && results.length > 0;
