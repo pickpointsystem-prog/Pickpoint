@@ -39,6 +39,10 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
     setLocations(StorageService.getLocations());
   }, []);
 
+  // Check if current location uses SIZE pricing
+  const currentLocation = locations.find(loc => loc.id === formData.locationId);
+  const showSizeField = currentLocation?.pricing?.type === 'SIZE';
+
   const handleNameInput = (val: string) => {
     if (val.trim() === '') {
       setFormData(prev => ({ 
@@ -190,44 +194,46 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
         </div>
       )}
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between z-10">
-        <h2 className="font-bold text-lg text-slate-800">Tambah Paket</h2>
-        <button onClick={onClose} className="p-2 text-slate-500 hover:text-slate-700">
-          <X className="w-5 h-5" />
+      <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-4 flex items-center justify-between z-10 shadow-md">
+        <h2 className="font-bold text-xl text-white">📦 Tambah Paket</h2>
+        <button onClick={onClose} className="p-2 text-white hover:bg-white/20 rounded-lg transition-colors">
+          <X className="w-6 h-6" />
         </button>
       </div>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="p-4 space-y-4 pb-24">
-        {/* AWB */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Nomor Resi/AWB *</label>
+      {/* Form - Minimalis */}
+      <form onSubmit={handleSubmit} className="p-3 space-y-3 pb-24">
+        {/* AWB - Compact */}
+        <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm">
+          <label className="block text-xs font-bold text-slate-600 mb-2">NOMOR RESI / AWB *</label>
           <div className="flex gap-2">
             <input
               type="text"
               value={formData.tracking}
               onChange={(e) => setFormData(prev => ({ ...prev, tracking: e.target.value }))}
-              className="flex-1 px-4 py-3 border border-slate-300 rounded-lg"
+              className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              placeholder="Masukkan nomor resi"
               required
             />
             <button
               type="button"
               onClick={() => setIsBarcodeScannerOpen(true)}
-              className="p-3 bg-blue-600 text-white rounded-lg"
+              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              aria-label="Scan barcode"
             >
               <Scan className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Nama Penerima with Search */}
-        <div className="relative">
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Nama Penerima *</label>
+        {/* Nama Penerima with Search - Compact */}
+        <div className="relative bg-white rounded-xl border border-slate-200 p-3 shadow-sm">
+          <label className="block text-xs font-bold text-slate-600 mb-2">NAMA PENERIMA *</label>
           <input
             type="text"
             value={formData.recipientName}
             onChange={(e) => handleNameInput(e.target.value)}
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
             placeholder="Ketik nama untuk mencari..."
             required
           />
@@ -248,77 +254,84 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
           )}
         </div>
 
-        {/* Nomor Telepon */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Nomor Telepon *</label>
-          <input
-            type="tel"
-            value={formData.recipientPhone}
-            onChange={(e) => setFormData(prev => ({ ...prev, recipientPhone: e.target.value }))}
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50"
-            disabled={isAutoFilled}
-            required
-          />
-        </div>
+        {/* Info Penerima - Combined compact */}
+        <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm space-y-3">
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-2">NOMOR TELEPON *</label>
+            <input
+              type="tel"
+              value={formData.recipientPhone}
+              onChange={(e) => setFormData(prev => ({ ...prev, recipientPhone: e.target.value }))}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-sm"
+              disabled={isAutoFilled}
+              placeholder="08xxxxxxxxxx"
+              required
+            />
+          </div>
 
-        {/* Nomor Unit */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Nomor Unit *</label>
-          <input
-            type="text"
-            value={formData.unitNumber}
-            onChange={(e) => setFormData(prev => ({ ...prev, unitNumber: e.target.value }))}
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50"
-            disabled={isAutoFilled}
-            required
-          />
-        </div>
-
-        {/* Kurir */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Kurir</label>
-          <select
-            value={formData.courier}
-            onChange={(e) => setFormData(prev => ({ ...prev, courier: e.target.value }))}
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg"
-          >
-            {COURIER_OPTIONS.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Ukuran */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Ukuran Paket</label>
-          <div className="grid grid-cols-3 gap-2">
-            {(['S', 'M', 'L'] as PackageSize[]).map(size => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => setFormData(prev => ({ ...prev, size }))}
-                className={`py-3 rounded-lg font-semibold transition-colors ${
-                  formData.size === size
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-100 text-slate-600'
-                }`}
-              >
-                {size}
-              </button>
-            ))}
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-2">NOMOR UNIT *</label>
+            <input
+              type="text"
+              value={formData.unitNumber}
+              onChange={(e) => setFormData(prev => ({ ...prev, unitNumber: e.target.value }))}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-sm"
+              disabled={isAutoFilled}
+              placeholder="Contoh: A-123"
+              required
+            />
           </div>
         </div>
 
-        {/* Foto */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Foto Paket (Opsional)</label>
+        {/* Kurir & Size - Compact */}
+        <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm space-y-3">
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-2">KURIR</label>
+            <select
+              value={formData.courier}
+              onChange={(e) => setFormData(prev => ({ ...prev, courier: e.target.value }))}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+            >
+              {COURIER_OPTIONS.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Ukuran - Only show if location uses SIZE pricing */}
+          {showSizeField && (
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-2">UKURAN PAKET</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['S', 'M', 'L'] as PackageSize[]).map(size => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, size }))}
+                    className={`py-2 rounded-lg font-bold text-sm transition-colors ${
+                      formData.size === size
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Foto - Compact */}
+        <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm">
+          <label className="block text-xs font-bold text-slate-600 mb-2">FOTO PAKET <span className="text-slate-400 font-normal">(Opsional)</span></label>
           {formData.photo ? (
             <div className="relative">
-              <img src={formData.photo} alt="Preview" className="w-full h-40 object-cover rounded-lg" />
+              <img src={formData.photo} alt="Preview" className="w-full h-32 object-cover rounded-lg" />
               <button
                 type="button"
                 onClick={() => setFormData(prev => ({ ...prev, photo: '' }))}
-                className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg"
+                className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-lg shadow-lg"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -327,29 +340,29 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
             <button
               type="button"
               onClick={() => setIsTakingPhoto(true)}
-              className="w-full py-3 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg flex items-center justify-center gap-2 font-semibold text-sm"
             >
-              <Camera className="w-5 h-5" />
+              <Camera className="w-4 h-4" />
               Ambil Foto
             </button>
           )}
         </div>
       </form>
 
-      {/* Fixed Bottom Actions */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 flex gap-3">
+      {/* Fixed Bottom Actions - Minimalis */}
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-white/95 border-t border-slate-200 p-3 flex gap-2 shadow-lg">
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-lg font-semibold"
+          className="px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-semibold text-sm"
         >
           Batal
         </button>
         <button
           onClick={handleSubmit}
-          className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-semibold"
+          className="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl font-bold shadow-lg"
         >
-          Simpan & Kirim Notif
+          💾 Simpan Paket
         </button>
       </div>
 
@@ -367,31 +380,56 @@ const MobileAddPackage: React.FC<MobileAddPackageProps> = ({ user, onClose, onSu
       {/* Camera Modal */}
       {isTakingPhoto && (
         <div className="fixed inset-0 bg-black z-[100] flex flex-col">
-          <div className="flex items-center justify-between p-4 bg-black/80">
-            <h3 className="text-white font-semibold">Ambil Foto Paket</h3>
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 bg-gradient-to-b from-black/90 to-black/60">
+            <h3 className="text-white font-bold text-lg">Ambil Foto Paket</h3>
             <button
+              type="button"
               onClick={() => setIsTakingPhoto(false)}
-              className="text-white p-2"
+              className="text-white p-2 hover:bg-white/20 rounded-lg transition-colors"
+              aria-label="Tutup kamera"
             >
               <X className="w-6 h-6" />
             </button>
           </div>
-          <div className="flex-1 relative">
+          
+          {/* Camera Preview */}
+          <div className="flex-1 relative bg-slate-900">
             <Webcam
               ref={webcamRef}
               audio={false}
               screenshotFormat="image/jpeg"
               videoConstraints={videoConstraints}
               className="w-full h-full object-cover"
+              style={{ transform: 'scaleX(1)' }}
             />
+            {/* Grid overlay for composition guide */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="w-full h-full grid grid-cols-3 grid-rows-3">
+                <div className="border border-white/20"></div>
+                <div className="border border-white/20"></div>
+                <div className="border border-white/20"></div>
+                <div className="border border-white/20"></div>
+                <div className="border border-white/20"></div>
+                <div className="border border-white/20"></div>
+                <div className="border border-white/20"></div>
+                <div className="border border-white/20"></div>
+                <div className="border border-white/20"></div>
+              </div>
+            </div>
           </div>
-          <div className="p-4 bg-black/80 flex justify-center">
+          
+          {/* Shutter Button */}
+          <div className="p-8 bg-gradient-to-t from-black/90 to-black/60 flex flex-col items-center gap-4">
             <button
+              type="button"
               onClick={capturePhoto}
-              className="bg-white rounded-full p-4 shadow-lg"
+              className="bg-white rounded-full p-5 shadow-2xl active:scale-95 transition-transform"
+              aria-label="Ambil foto"
             >
-              <Camera className="w-8 h-8 text-slate-800" />
+              <Camera className="w-10 h-10 text-blue-600" />
             </button>
+            <p className="text-white/80 text-sm">Tap untuk mengambil foto</p>
           </div>
         </div>
       )}

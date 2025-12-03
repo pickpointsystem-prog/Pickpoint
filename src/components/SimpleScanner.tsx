@@ -99,39 +99,39 @@ const SimpleScanner: React.FC<SimpleScannerProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
         }
       }}
     >
-      <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
+      <div className="bg-white rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Camera className="w-5 h-5 text-white" />
-            <h2 className="font-semibold text-white text-lg">{title}</h2>
+            <Camera className="w-6 h-6 text-white" />
+            <h2 className="font-bold text-white text-xl">{title}</h2>
           </div>
           <button 
             onClick={onClose} 
             className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 m-4">
+          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-6 py-4 m-6">
             <p className="font-semibold">Error</p>
             <p className="text-sm">{error}</p>
           </div>
         )}
 
-        {/* Scanner Container */}
-        <div className="p-4">
-          <div className="relative bg-slate-900 rounded-xl overflow-hidden aspect-video mb-4">
+        {/* Scanner Container - Larger */}
+        <div className="p-6">
+          <div className="relative bg-slate-900 rounded-2xl overflow-hidden aspect-video mb-6">
             <video
               ref={videoRef}
               className="w-full h-full object-cover"
@@ -141,28 +141,28 @@ const SimpleScanner: React.FC<SimpleScannerProps> = ({
             />
             {scanning && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-48 h-48 border-4 border-blue-500 rounded-2xl animate-pulse"></div>
+                <div className="w-64 h-64 border-4 border-blue-500 rounded-3xl animate-pulse"></div>
               </div>
             )}
           </div>
           
           <div className="text-center">
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-600 font-medium">
               Arahkan kamera ke QR code atau barcode
             </p>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-sm text-slate-400 mt-2">
               Scanner akan otomatis menutup setelah berhasil
             </p>
           </div>
         </div>
 
         {/* Close Button */}
-        <div className="p-4 border-t border-slate-200">
+        <div className="p-6 border-t border-slate-200 bg-slate-50">
           <button
             onClick={onClose}
-            className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors"
+            className="w-full py-3 px-4 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-xl transition-colors"
           >
-            Tutup
+            Tutup Scanner
           </button>
         </div>
       </div>

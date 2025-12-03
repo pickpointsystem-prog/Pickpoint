@@ -1187,8 +1187,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
 
       {/* 2. DETAIL & ACTION MODAL */}
       {selectedPkg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setSelectedPkg(null); }}>
-          <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setSelectedPkg(null); }}>
+          <div className="relative w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl animate-in zoom-in-95 duration-200">
             <button
               onClick={() => setSelectedPkg(null)}
               className="absolute right-4 top-4 rounded-full border border-slate-200 p-1.5 text-slate-400 transition-colors hover:border-red-200 hover:text-red-500"
@@ -1335,45 +1335,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                {selectedPkg.status === 'ARRIVED' && (
-                  <button
-                    onClick={() => handlePickup(selectedPkg)}
-                    className={twMerge(actionButtonClass, 'h-10 w-10 rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700')}
-                    title="Tandai diambil"
-                    aria-label="Tandai diambil"
-                  >
-                    <PackageCheck className="h-4 w-4" />
-                  </button>
-                )}
-                {selectedPkg.status !== 'DESTROYED' && (
-                  <button
-                    onClick={() => handleDestroy(selectedPkg)}
-                    className={twMerge(actionButtonClass, 'h-10 w-10 rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700')}
-                    title="Tandai hilang/dimusnahkan"
-                    aria-label="Tandai hilang/dimusnahkan"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
+              {/* Action Buttons - Only Pickup Button */}
+              {selectedPkg.status === 'ARRIVED' && (
                 <button
-                  onClick={() => handleMarkPaid(selectedPkg)}
-                  className={twMerge(actionButtonClass, 'h-10 w-10 rounded-xl border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700')}
-                  title="Update pembayaran"
-                  aria-label="Update pembayaran"
+                  onClick={() => handlePickup(selectedPkg)}
+                  className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold py-4 px-6 rounded-2xl transition-all shadow-lg hover:shadow-xl"
                 >
-                  <Wallet className="h-4 w-4" />
+                  <PackageCheck className="h-6 w-6" />
+                  <span className="text-lg">Ambil Paket</span>
                 </button>
-                <button
-                  onClick={async () => await handleResendNotification(selectedPkg)}
-                  className={twMerge(actionButtonClass, 'h-10 w-10 rounded-xl border-purple-200 text-purple-600 hover:bg-purple-50 hover:text-purple-700')}
-                  title="Kirim ulang notifikasi"
-                  aria-label="Kirim ulang notifikasi"
-                  disabled={actionBusy === `resend-${selectedPkg.id}`}
-                >
-                  {actionBusy === `resend-${selectedPkg.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
-                </button>
-              </div>
+              )}
+              {selectedPkg.status === 'PICKED' && (
+                <div className="text-center py-4">
+                  <p className="text-emerald-600 font-semibold text-lg">✓ Paket sudah diambil</p>
+                  <p className="text-slate-500 text-sm mt-1">{formatDateTime(selectedPkg.dates.picked)}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
