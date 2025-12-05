@@ -16,6 +16,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const users = StorageService.getUsers();
+    
+    // Debug: log semua users yang ada
+    console.log('🔍 Available users:', users.map(u => ({ username: u.username, password: u.password })));
+    console.log('🔍 Login attempt:', { username, password });
+    
     const found = users.find(u => u.username === username && u.password === password);
     
     if (found) {

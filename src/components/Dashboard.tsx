@@ -97,7 +97,6 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => {
-  console.log('[Dashboard] Rendering with user:', user);
   // const { showToast } = useToast();
     // State untuk expand/collapse KPI
     const [kpiExpanded, setKpiExpanded] = useState(true);
@@ -146,36 +145,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectAllRef = useRef<HTMLInputElement>(null);
 
-  // Debug: Log modal state changes
-  useEffect(() => {
-    console.log('[Dashboard] Modal states:', {
-      scannedQRData: !!scannedQRData,
-      isQRScannerOpen,
-      isBarcodeScannerOpen,
-      selectedPkg: !!selectedPkg
-    });
-  }, [scannedQRData, isQRScannerOpen, isBarcodeScannerOpen, selectedPkg]);
+
 
   // Handle ESC key to close all modals
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (scannedQRData) {
-          console.log('[Dashboard] ESC - closing scannedQRData');
-          setScannedQRData(null);
-        }
-        if (isQRScannerOpen) {
-          console.log('[Dashboard] ESC - closing QR scanner');
-          setIsQRScannerOpen(false);
-        }
-        if (isBarcodeScannerOpen) {
-          console.log('[Dashboard] ESC - closing barcode scanner');
-          setIsBarcodeScannerOpen(false);
-        }
-        if (selectedPkg) {
-          console.log('[Dashboard] ESC - closing package detail');
-          setSelectedPkg(null);
-        }
+        if (scannedQRData) setScannedQRData(null);
+        if (isQRScannerOpen) setIsQRScannerOpen(false);
+        if (isBarcodeScannerOpen) setIsBarcodeScannerOpen(false);
+        if (selectedPkg) setSelectedPkg(null);
       }
     };
     window.addEventListener('keydown', handleEsc);
@@ -216,7 +195,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
   // Listen for realtime events from other devices (mobile scan → desktop popup)
     useEffect(() => {
     const unsubscribe = realtimeService.on('QR_SCANNED', (qrData: string) => {
-      console.log('[Dashboard] Received QR_SCANNED from mobile:', qrData);
       
       // Cari paket berdasarkan QR data
       const code = (qrData || '').trim();
@@ -260,7 +238,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
     realtimeNet.subscribe();
     // Filter: hanya terima event dari user yang sama (staff A HP -> staff A desktop)
     const off = realtimeNet.on('QR_SCANNED', (qrData: string) => {
-      console.log('[Dashboard-Net] Received QR_SCANNED from same user:', qrData);
       const code = (qrData || '').trim();
       if (!code) return;
       let lower = code.toLowerCase();
@@ -296,7 +273,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, openAddModal = false }) => 
 
   // Handler untuk QR customer terdeteksi - auto-open QR Scanner modal
   /* const handleQRDetected = (data: string) => {
-    console.log('[Dashboard] Customer QR detected, auto-opening scanner:', data);
     // removed: preScannedQR handling; using modal open directly
     setIsQRScannerOpen(true);
   }; */
