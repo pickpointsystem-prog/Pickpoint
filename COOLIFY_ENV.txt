@@ -1,0 +1,129 @@
+# ======================================
+# PICKPOINT - COOLIFY ENVIRONMENT VARIABLES
+# ======================================
+# Copy-paste ini ke Coolify saat deploy!
+# Generated: December 15, 2025
+# ======================================
+
+# ==========================================
+# BACKEND ENV (untuk backend service)
+# ==========================================
+
+NODE_ENV=production
+PORT=3000
+
+# Database (dari Coolify PostgreSQL service)
+DB_HOST=<COOLIFY_POSTGRES_HOST>
+DB_PORT=5432
+DB_NAME=pickpoint
+DB_USER=pickpoint_user
+DB_PASSWORD=<STRONG_PASSWORD_ANDA>
+
+# JWT Secrets (sudah digenerate)
+JWT_SECRET=yuifWUs2TSPwqaROuf5PG3eg0tCHTyAI9qvHk3Frlhc=
+JWT_REFRESH_SECRET=30FFSS9GiEnddH4eG6MQQjAji2b52Sk/h8ECGWE4nA8=
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
+
+# CORS (dengan wildcard DNS, gunakan domains ini)
+CORS_ORIGIN=https://admin.pickpoint.my.id,https://paket.pickpoint.my.id
+
+# WhatsApp Gateway (isi dari provider Anda)
+WA_API_KEY=<YOUR_WA_API_KEY>
+WA_ENDPOINT=<YOUR_WA_ENDPOINT>
+WA_SENDER_NAME=PickPoint
+
+# VAPID Keys (untuk push notifications - optional)
+VAPID_PUBLIC_KEY=<GENERATE_NANTI>
+VAPID_PRIVATE_KEY=<GENERATE_NANTI>
+
+
+# ==========================================
+# FRONTEND ENV (untuk frontend service)
+# ==========================================
+
+VITE_API_URL=https://api.pickpoint.my.id
+VITE_SOCKET_URL=https://api.pickpoint.my.id
+
+
+# ==========================================
+# CATATAN PENTING
+# ==========================================
+
+# 1. <COOLIFY_POSTGRES_HOST>
+#    Ganti dengan internal hostname dari Coolify PostgreSQL service
+#    Contoh: pickpoint-postgres.pickpoint.svc.cluster.local
+#    Bisa dicek di Coolify dashboard > PostgreSQL service > Connection
+
+# 2. <STRONG_PASSWORD_ANDA>
+#    Gunakan password min 12 karakter: huruf besar + kecil + angka + symbol
+#    Contoh: SuperSecure123!Pass
+#    Simpan di password manager!
+
+# 3. <YOUR_WA_API_KEY> & <YOUR_WA_ENDPOINT>
+#    Dapatkan dari WhatsApp gateway provider Anda
+#    Contoh provider: Fonnte, Wappin, Woowa, dll
+
+# 4. VAPID Keys (optional - untuk push notifications)
+#    Generate dengan: npx web-push generate-vapid-keys
+#    Atau skip dulu jika belum butuh push notif
+
+# 5. Wildcard DNS
+#    Karena sudah setup *.pickpoint.my.id, semua subdomain otomatis:
+#    - admin.pickpoint.my.id
+#    - paket.pickpoint.my.id
+#    - api.pickpoint.my.id
+#    Coolify akan auto-generate SSL certificate via Let's Encrypt!
+
+
+# ==========================================
+# CARA PAKAI DI COOLIFY
+# ==========================================
+
+# Backend Service:
+# 1. Buat service baru > From GitHub
+# 2. Select repo: pickpointsystem-prog/Pickpoint
+# 3. Dockerfile path: backend/Dockerfile
+# 4. Environment: Copy semua variabel "BACKEND ENV" di atas
+# 5. Domain: api.pickpoint.my.id
+# 6. Deploy!
+
+# Frontend Service:
+# 1. Buat service baru > From GitHub
+# 2. Select repo: pickpointsystem-prog/Pickpoint
+# 3. Dockerfile path: Dockerfile (root)
+# 4. Build args: VITE_API_URL=https://api.pickpoint.my.id
+# 5. Environment: Copy variabel "FRONTEND ENV" di atas
+# 6. Domains: 
+#    - admin.pickpoint.my.id
+#    - paket.pickpoint.my.id
+# 7. Deploy!
+
+
+# ==========================================
+# ORDER DEPLOYMENT
+# ==========================================
+
+# 1. PostgreSQL service (buat dulu via Coolify UI)
+# 2. Run migration (psql < supabase-reset.sql)
+# 3. Backend service (api.pickpoint.my.id)
+# 4. Frontend service (admin + paket domains)
+# 5. Test all endpoints!
+
+
+# ==========================================
+# TESTING SETELAH DEPLOY
+# ==========================================
+
+# Test backend API:
+# curl https://api.pickpoint.my.id/health
+
+# Test frontend admin:
+# curl https://admin.pickpoint.my.id
+
+# Test frontend customer:
+# curl https://paket.pickpoint.my.id
+
+# Test login:
+# Username: admin
+# Password: admin123 (GANTI SEGERA!)
