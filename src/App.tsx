@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AdminApp from './components/AdminApp';
 import MobileStaffApp from './components/MobileStaffApp';
+import CustomerApp from './components/CustomerApp';
 import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 import Landing from './components/Landing';
@@ -21,6 +22,7 @@ if (config.enableDebugMode) {
 }
 
 const isDashboardDomain = window.location.hostname === config.dashboardDomain || window.location.hostname === 'localhost';
+const isCustomerPortal = window.location.hostname === 'paket.pickpoint.my.id' || window.location.hostname.includes('paket.');
 
 const App: React.FC = () => {
   return (
@@ -28,12 +30,19 @@ const App: React.FC = () => {
       <AppProvider>
         <ToastProvider>
           <Routes>
+            {/* Customer Portal Routes */}
+            {isCustomerPortal && <Route path="/*" element={<CustomerApp />} />}
+
+            {/* Default Routes */}
             <Route path="/" element={isDashboardDomain ? <Navigate to="/admin" replace /> : <Landing />} />
             <Route path="/tracking" element={<Tracking />} />
             <Route path="/form" element={<SelfRegistration />} />
             <Route path="/payment" element={<PaymentPage />} />
+            
+            {/* Dashboard & Mobile Routes */}
             {isDashboardDomain && <Route path="/admin/*" element={<AdminApp />} />}
             {isDashboardDomain && <Route path="/mobile" element={<MobileStaffApp />} />}
+            
             <Route path="*" element={<Navigate to={isDashboardDomain ? "/admin" : "/"} replace />} />
           </Routes>
         </ToastProvider>

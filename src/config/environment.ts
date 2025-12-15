@@ -38,13 +38,22 @@ const defaultDashboardDomains: Record<AppEnv, string> = {
   development: "admin.pickpoint.my.id"
 };
 
+const defaultApiUrls: Record<AppEnv, string> = {
+  production: "https://api.pickpoint.my.id",
+  qa: "https://api-qa.pickpoint.my.id",
+  demo: "https://api-demo.pickpoint.my.id",
+  development: "http://localhost:3000"
+};
+
 const publicDomain = (metaEnv?.VITE_PUBLIC_DOMAIN as string | undefined) || defaultPublicDomains[env];
 const dashboardDomain = (metaEnv?.VITE_DASHBOARD_DOMAIN as string | undefined) || defaultDashboardDomains[env];
+const apiUrl = (metaEnv?.VITE_API_URL as string | undefined) || defaultApiUrls[env];
 
 const config = {
   storagePrefix: "pp_",
   enableDebugMode: env !== "production",
   env,
+  apiUrl,
   whatsappApiUrl: (metaEnv?.VITE_WA_API_URL as string | undefined) || "/api/wa",
   publicDomain,
   dashboardDomain,

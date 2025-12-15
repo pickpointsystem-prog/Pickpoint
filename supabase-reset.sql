@@ -65,11 +65,16 @@ CREATE TABLE packages (
 CREATE TABLE customers (
   id text PRIMARY KEY,
   name text NOT NULL,
-  phone_number text NOT NULL,
+  phone_number text NOT NULL UNIQUE,
   unit_number text NOT NULL,
   location_id text REFERENCES locations(id) ON DELETE CASCADE,
   is_member boolean DEFAULT false,
   membership_expiry text,
+  pin text,
+  otp_code text,
+  otp_expiry timestamptz,
+  last_login_at timestamptz,
+  last_login_ip text,
   created_at timestamptz DEFAULT now()
 );
 
@@ -96,6 +101,7 @@ CREATE TABLE settings (
   wa_template_package text,
   wa_template_member text,
   wa_template_reminder text,
+  wa_template_otp text DEFAULT 'Kode OTP Anda: {code}. Berlaku 10 menit.',
   enable_payment_gateway boolean DEFAULT false,
   landing_config jsonb DEFAULT '{}'::jsonb,
   created_at timestamptz DEFAULT now(),
@@ -137,8 +143,8 @@ INSERT INTO users (id, username, password, name, role, location_id) VALUES
 ('user_admin', 'admin', 'admin123', 'Admin User', 'ADMIN', 'loc_demo');
 
 -- Settings Template
-INSERT INTO settings (wa_api_key, wa_sender, wa_endpoint, wa_template_package) VALUES 
-('dummy-key', 'Pickpoint', 'https://api.whatsapp.com', 'Halo {name}, paket Anda ({tracking}) sudah tiba di {location}. Klik: {link}');
+INSERT INTO settings (wa_api_key, wa_sender, wa_endpoint, wa_template_package, wa_template_otp) VALUES 
+('dummy-key', 'Pickpoint', 'https://api.whatsapp.com', 'Halo {name}, paket Anda ({tracking}) sudah tiba di {location}. Klik: {link}', 'Kode OTP Anda: {code}. Berlaku 10 menit.');
 
 -- ====================================
 -- SELESAI
